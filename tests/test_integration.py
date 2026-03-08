@@ -55,11 +55,11 @@ class TestManagement:
 
 
 # ============================================================
-# 3. Reality: Ingest
+# 3. Reality: Capture
 # ============================================================
-class TestRealityIngest:
+class TestRealityCapture:
     def test_source(self, mg, uids):
-        r = mg.ingest(
+        r = mg.capture(
             action="source",
             label="PY SDK Test Source",
             summary="Integration test source",
@@ -69,7 +69,7 @@ class TestRealityIngest:
         uids["source"] = r["uid"]
 
     def test_snippet(self, mg, uids):
-        r = mg.ingest(
+        r = mg.capture(
             action="snippet",
             label="PY SDK Test Snippet",
             summary="A snippet from the source",
@@ -78,7 +78,7 @@ class TestRealityIngest:
         assert "uid" in r
 
     def test_observation(self, mg, uids):
-        r = mg.ingest(
+        r = mg.capture(
             action="observation",
             label="PY SDK Test Observation",
             summary="Something observed during testing",
@@ -632,7 +632,7 @@ class TestEvolve:
         assert r is not None
 
     def test_tombstone_and_restore(self, mg):
-        node = mg.ingest(action="observation", label="PY Evolve Temp", summary="Temp")
+        node = mg.capture(action="observation", label="PY Evolve Temp", summary="Temp")
         uid = node["uid"]
         mg.evolve(action="tombstone", uid=uid, reason="test")
         mg.evolve(action="restore", uid=uid)
@@ -707,7 +707,7 @@ class TestTraversalShortcuts:
 # ============================================================
 class TestLifecycleShortcuts:
     def test_tombstone_and_restore(self, mg):
-        node = mg.ingest(action="observation", label="PY Lifecycle Temp", summary="Temp")
+        node = mg.capture(action="observation", label="PY Lifecycle Temp", summary="Temp")
         uid = node["uid"]
         mg.tombstone(uid, "testing shortcuts")
         mg.restore(uid)

@@ -72,8 +72,8 @@ class MindGraph:
 
     # ---- Reality Layer ----
 
-    def ingest(self, **kwargs: Any) -> Any:
-        return self._request("POST", "/reality/ingest", kwargs)
+    def capture(self, **kwargs: Any) -> Any:
+        return self._request("POST", "/reality/capture", kwargs)
 
     def entity(self, **kwargs: Any) -> Any:
         return self._request("POST", "/reality/entity", kwargs)

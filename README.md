@@ -48,7 +48,7 @@ Supports context manager protocol (`with` statement) for automatic cleanup.
 
 | Method | Description |
 |--------|-------------|
-| `ingest(**kwargs)` | Ingest a source, snippet, or observation |
+| `capture(**kwargs)` | Capture a source, snippet, or observation |
 | `entity(**kwargs)` | Create, alias, resolve, or merge entities |
 | `find_or_create_entity(label, entity_type?, agent_id?)` | Convenience: create or find an entity by label |
 
