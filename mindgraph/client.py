@@ -310,6 +310,121 @@ class MindGraph:
             body["agent_id"] = agent_id
         return self._request("POST", "/evolve", body)
 
+    # ---- Ingestion & Retrieval ----
+
+    def ingest_chunk(
+        self,
+        content: str,
+        *,
+        chunk_type: str | None = None,
+        document_uid: str | None = None,
+        chunk_index: int | None = None,
+        label: str | None = None,
+        layers: list[str] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"content": content}
+        if chunk_type:
+            body["chunk_type"] = chunk_type
+        if document_uid:
+            body["document_uid"] = document_uid
+        if chunk_index is not None:
+            body["chunk_index"] = chunk_index
+        if label:
+            body["label"] = label
+        if layers:
+            body["layers"] = layers
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/ingest/chunk", body)
+
+    def ingest_document(
+        self,
+        content: str,
+        *,
+        title: str | None = None,
+        document_type: str | None = None,
+        source_uri: str | None = None,
+        chunk_size: int | None = None,
+        chunk_overlap: float | None = None,
+        layers: list[str] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"content": content}
+        if title:
+            body["title"] = title
+        if document_type:
+            body["document_type"] = document_type
+        if source_uri:
+            body["source_uri"] = source_uri
+        if chunk_size is not None:
+            body["chunk_size"] = chunk_size
+        if chunk_overlap is not None:
+            body["chunk_overlap"] = chunk_overlap
+        if layers:
+            body["layers"] = layers
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/ingest/document", body)
+
+    def ingest_session(
+        self,
+        content: str,
+        *,
+        session_uid: str | None = None,
+        chunk_size: int | None = None,
+        chunk_overlap: float | None = None,
+        layers: list[str] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"content": content}
+        if session_uid:
+            body["session_uid"] = session_uid
+        if chunk_size is not None:
+            body["chunk_size"] = chunk_size
+        if chunk_overlap is not None:
+            body["chunk_overlap"] = chunk_overlap
+        if layers:
+            body["layers"] = layers
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/ingest/session", body)
+
+    def retrieve_context(
+        self,
+        query: str,
+        *,
+        k: int | None = None,
+        depth: int | None = None,
+        node_types: list[str] | None = None,
+        layer: str | None = None,
+        include_chunks: bool | None = None,
+        include_graph: bool | None = None,
+        min_similarity: float | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"query": query}
+        if k is not None:
+            body["k"] = k
+        if depth is not None:
+            body["depth"] = depth
+        if node_types:
+            body["node_types"] = node_types
+        if layer:
+            body["layer"] = layer
+        if include_chunks is not None:
+            body["include_chunks"] = include_chunks
+        if include_graph is not None:
+            body["include_graph"] = include_graph
+        if min_similarity is not None:
+            body["min_similarity"] = min_similarity
+        return self._request("POST", "/retrieve/context", body)
+
+    def get_job(self, job_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/jobs/{job_id}")
+
+    def clear_graph(self) -> dict[str, Any]:
+        return self._request("POST", "/clear")
+
     # ---- Management (Cloud only) ----
 
     def signup(self, email: str, password: str) -> Any:
