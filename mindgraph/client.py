@@ -542,6 +542,7 @@ class MindGraph:
         *,
         title: str | None = None,
         document_type: str | None = None,
+        content_type: str | None = None,
         source_uri: str | None = None,
         chunk_size: int | None = None,
         chunk_overlap: float | None = None,
@@ -553,6 +554,8 @@ class MindGraph:
             body["title"] = title
         if document_type:
             body["document_type"] = document_type
+        if content_type:
+            body["content_type"] = content_type
         if source_uri:
             body["source_uri"] = source_uri
         if chunk_size is not None:
