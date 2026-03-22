@@ -93,6 +93,35 @@ class MindGraph:
             body["agent_id"] = agent_id
         return self._request("POST", "/reality/entity", body)
 
+    def resolve_entity(
+        self,
+        text: str,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Resolve *text* to an existing entity via alias matching.
+
+        Returns ``{"uid": "<uid>"}`` or ``{"uid": null}`` if no match.
+        """
+        body: dict[str, Any] = {"action": "resolve", "text": text}
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/reality/entity", body)
+
+    def fuzzy_resolve_entity(
+        self,
+        text: str,
+        limit: int = 5,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Fuzzy-match *text* against existing entities.
+
+        Returns ``{"matches": [{"uid", "label", "score"}, ...]}``.
+        """
+        body: dict[str, Any] = {"action": "fuzzy_resolve", "text": text, "limit": limit}
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/reality/entity", body)
+
     # ---- Epistemic Layer ----
 
     def argue(self, **kwargs: Any) -> Any:
@@ -111,6 +140,71 @@ class MindGraph:
 
     def deliberate(self, **kwargs: Any) -> Any:
         return self._request("POST", "/intent/deliberation", kwargs)
+
+    def open_decision(
+        self,
+        label: str,
+        *,
+        summary: str | None = None,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Open a new decision for deliberation. Returns the Decision node."""
+        body: dict[str, Any] = {"action": "open_decision", "label": label}
+        if summary:
+            body["summary"] = summary
+        if props:
+            body["props"] = props
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/intent/deliberation", body)
+
+    def add_option(
+        self,
+        decision_uid: str,
+        label: str,
+        *,
+        summary: str | None = None,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Add an option to an open decision. Returns the Option node."""
+        body: dict[str, Any] = {
+            "action": "add_option",
+            "decision_uid": decision_uid,
+            "label": label,
+        }
+        if summary:
+            body["summary"] = summary
+        if props:
+            body["props"] = props
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/intent/deliberation", body)
+
+    def resolve_decision(
+        self,
+        decision_uid: str,
+        chosen_option_uid: str,
+        *,
+        summary: str | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Resolve a decision by choosing an option.
+
+        *chosen_option_uid* must be the uid of an option previously added
+        via :meth:`add_option`.
+        """
+        body: dict[str, Any] = {
+            "action": "resolve",
+            "decision_uid": decision_uid,
+            "chosen_option_uid": chosen_option_uid,
+        }
+        if summary:
+            body["summary"] = summary
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/intent/deliberation", body)
 
     # ---- Action Layer ----
 
@@ -173,7 +267,12 @@ class MindGraph:
 
     # ---- Cross-cutting ----
 
-    def retrieve(self, **kwargs: Any) -> Any:
+    def retrieve(self, **kwargs: Any) -> list[dict[str, Any]]:
+        """Retrieve nodes by action. Returns a list of results.
+
+        Note: ``action="semantic"`` requires a configured embedding provider
+        on the server. For semantic search, use :meth:`retrieve_context` instead.
+        """
         return self._request("POST", "/retrieve", kwargs)
 
     def traverse(self, **kwargs: Any) -> Any:
@@ -194,11 +293,17 @@ class MindGraph:
         props: dict[str, Any] | None = None,
         agent_id: str | None = None,
     ) -> dict[str, Any]:
+        """Create a node via the low-level CRUD endpoint.
+
+        The server requires ``props["_type"]`` to determine the node variant.
+        If *node_type* is provided and ``_type`` is not already in *props*,
+        it is injected automatically.
+        """
         body: dict[str, Any] = {"label": label}
-        if node_type:
-            body["node_type"] = node_type
-        if props:
-            body["props"] = props
+        p = dict(props or {})
+        if node_type and "_type" not in p:
+            p["_type"] = node_type
+        body["props"] = p
         if agent_id:
             body["agent_id"] = agent_id
         return self._request("POST", "/node", body)
@@ -245,15 +350,22 @@ class MindGraph:
         props: dict[str, Any] | None = None,
         agent_id: str | None = None,
     ) -> Any:
+        """Create an edge via the low-level CRUD endpoint.
+
+        The server requires ``props["_type"]`` to determine the edge variant.
+        If *edge_type* is provided and ``_type`` is not already in *props*,
+        it is injected automatically.
+        """
         body: dict[str, Any] = {
             "from_uid": from_uid,
             "to_uid": to_uid,
-            "edge_type": edge_type,
         }
+        p = dict(props or {})
+        if edge_type and "_type" not in p:
+            p["_type"] = edge_type
+        body["props"] = p
         if weight is not None:
             body["weight"] = weight
-        if props:
-            body["props"] = props
         if agent_id:
             body["agent_id"] = agent_id
         return self._request("POST", "/edge", body)
@@ -272,6 +384,13 @@ class MindGraph:
         from_uid: str | None = None,
         to_uid: str | None = None,
     ) -> list[dict[str, Any]]:
+        """List edges filtered by source and/or target node.
+
+        At least one of *from_uid* or *to_uid* is **required** — the server
+        returns 400 if neither is provided.
+        """
+        if not from_uid and not to_uid:
+            raise ValueError("at least one of from_uid or to_uid is required")
         params: dict[str, str] = {}
         if from_uid:
             params["from_uid"] = from_uid
