@@ -474,6 +474,14 @@ class MindGraph:
     def batch(self, **kwargs: Any) -> Any:
         return self._request("POST", "/batch", kwargs)
 
+    def get_nodes_batch(self, uids: list[str]) -> list[dict[str, Any]]:
+        """Fetch multiple nodes by UID in a single request."""
+        return self._request("POST", "/nodes/batch", {"uids": uids})
+
+    def get_edges_batch(self, uids: list[str]) -> list[dict[str, Any]]:
+        """Fetch all edges between a set of node UIDs."""
+        return self._request("POST", "/edges/batch", {"uids": uids})
+
     # ---- Embeddings ----
 
     def configure_embeddings(self, **kwargs: Any) -> Any:
@@ -667,6 +675,16 @@ class MindGraph:
         chunk_overlap: float | None = None,
         layers: list[str] | None = None,
         agent_id: str | None = None,
+        # Paper metadata
+        authors: list[str] | None = None,
+        abstract_text: str | None = None,
+        doi: str | None = None,
+        publication_date: str | None = None,
+        journal: str | None = None,
+        keywords: list[str] | None = None,
+        citation_count: int | None = None,
+        arxiv_id: str | None = None,
+        language: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"content": content}
         if title:
@@ -685,6 +703,24 @@ class MindGraph:
             body["layers"] = layers
         if agent_id:
             body["agent_id"] = agent_id
+        if authors:
+            body["authors"] = authors
+        if abstract_text:
+            body["abstract_text"] = abstract_text
+        if doi:
+            body["doi"] = doi
+        if publication_date:
+            body["publication_date"] = publication_date
+        if journal:
+            body["journal"] = journal
+        if keywords:
+            body["keywords"] = keywords
+        if citation_count is not None:
+            body["citation_count"] = citation_count
+        if arxiv_id:
+            body["arxiv_id"] = arxiv_id
+        if language:
+            body["language"] = language
         return self._request("POST", "/ingest/document", body)
 
     def ingest_session(
@@ -750,6 +786,25 @@ class MindGraph:
 
     def cancel_job(self, job_id: str) -> Any:
         return self._request("POST", f"/jobs/{job_id}/cancel")
+
+    def resume_document(
+        self,
+        doc_uid: str,
+        *,
+        layers: list[str] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Resume ingestion of a document that has failed chunks."""
+        body: dict[str, Any] = {}
+        if layers:
+            body["layers"] = layers
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", f"/ingest/resume/{doc_uid}", body)
+
+    def delete_document(self, uid: str) -> Any:
+        """Delete a document and all its chunks and extracted nodes."""
+        return self._request("DELETE", f"/ingest/document/{uid}")
 
     def cleanup_orphans(self) -> Any:
         return self._request("POST", "/ingest/cleanup")
