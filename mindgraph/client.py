@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from typing import Any
 
 import httpx
@@ -24,8 +25,12 @@ class MindGraph:
         api_key: str | None = None,
         jwt: str | None = None,
         timeout: float = 30.0,
+        max_retries: int = 3,
+        retry_backoff: float = 1.0,
     ):
         self.base_url = base_url.rstrip("/")
+        self._max_retries = max_retries
+        self._retry_backoff = retry_backoff
         headers: dict[str, str] = {"Content-Type": "application/json"}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
@@ -47,20 +52,29 @@ class MindGraph:
     # ---- HTTP helpers ----
 
     def _request(self, method: str, path: str, json: Any = None) -> Any:
-        resp = self._client.request(method, path, json=json)
-        if resp.status_code >= 400:
-            try:
-                body = resp.json()
-            except Exception:
-                body = resp.text
-            raise MindGraphError(
-                f"{method} {path} failed: {resp.status_code}",
-                resp.status_code,
-                body,
-            )
-        if not resp.content:
-            return None
-        return resp.json()
+        last_error: MindGraphError | None = None
+        for attempt in range(self._max_retries + 1):
+            resp = self._client.request(method, path, json=json)
+            if resp.status_code >= 400:
+                try:
+                    body = resp.json()
+                except Exception:
+                    body = resp.text
+                err = MindGraphError(
+                    f"{method} {path} failed: {resp.status_code}",
+                    resp.status_code,
+                    body,
+                )
+                # Retry on 503 (server warming up) with exponential backoff
+                if resp.status_code == 503 and attempt < self._max_retries:
+                    last_error = err
+                    time.sleep(self._retry_backoff * (2**attempt))
+                    continue
+                raise err
+            if not resp.content:
+                return None
+            return resp.json()
+        raise last_error  # type: ignore[misc]
 
     # ---- Health ----
 
