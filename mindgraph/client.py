@@ -107,6 +107,85 @@ class MindGraph:
             body["agent_id"] = agent_id
         return self._request("POST", "/reality/entity", body)
 
+    def find_or_create_person(
+        self,
+        label: str,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or find a Person entity. Sets ``entity_type`` to ``"person"``."""
+        merged = {"entity_type": "person", **(props or {})}
+        return self.find_or_create_entity(label, merged, agent_id)
+
+    def find_or_create_organization(
+        self,
+        label: str,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or find an Organization entity. Sets ``entity_type`` to ``"organization"``."""
+        merged = {"entity_type": "organization", **(props or {})}
+        return self.find_or_create_entity(label, merged, agent_id)
+
+    def find_or_create_nation(
+        self,
+        label: str,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or find a Nation entity. Sets ``entity_type`` to ``"nation"``."""
+        merged = {"entity_type": "nation", **(props or {})}
+        return self.find_or_create_entity(label, merged, agent_id)
+
+    def find_or_create_event(
+        self,
+        label: str,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or find an Event entity. Sets ``entity_type`` to ``"event"``."""
+        merged = {"entity_type": "event", **(props or {})}
+        return self.find_or_create_entity(label, merged, agent_id)
+
+    def find_or_create_place(
+        self,
+        label: str,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or find a Place entity. Sets ``entity_type`` to ``"place"``."""
+        merged = {"entity_type": "place", **(props or {})}
+        return self.find_or_create_entity(label, merged, agent_id)
+
+    def find_or_create_concept(
+        self,
+        label: str,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Create or find a Concept entity. Sets ``entity_type`` to ``"concept"``."""
+        merged = {"entity_type": "concept", **(props or {})}
+        return self.find_or_create_entity(label, merged, agent_id)
+
+    def add_observation(
+        self,
+        label: str,
+        description: str,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Capture an observation via the Reality layer.
+
+        Posts to ``/reality/capture`` with action ``observation``.
+        """
+        body: dict[str, Any] = {
+            "action": "observation",
+            "label": label,
+            "summary": description,
+        }
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/reality/capture", body)
+
     def resolve_entity(
         self,
         text: str,
@@ -146,6 +225,48 @@ class MindGraph:
 
     def structure(self, **kwargs: Any) -> Any:
         return self._request("POST", "/epistemic/structure", kwargs)
+
+    def add_claim(
+        self,
+        label: str,
+        content: str,
+        confidence: float | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Add a claim (hypothesis) via the Epistemic layer.
+
+        Posts to ``/epistemic/inquiry`` with action ``hypothesis``.
+        """
+        body: dict[str, Any] = {
+            "action": "hypothesis",
+            "label": label,
+            "summary": content,
+        }
+        if confidence is not None:
+            body["confidence"] = confidence
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/epistemic/inquiry", body)
+
+    def add_evidence(
+        self,
+        label: str,
+        description: str,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Add evidence via the Epistemic argument endpoint.
+
+        Posts to ``/epistemic/argument`` with an evidence object.
+        """
+        body: dict[str, Any] = {
+            "evidence": {
+                "label": label,
+                "summary": description,
+            },
+        }
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/epistemic/argument", body)
 
     # ---- Intent Layer ----
 

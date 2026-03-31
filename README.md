@@ -50,7 +50,27 @@ Supports context manager protocol (`with` statement) for automatic cleanup.
 |--------|-------------|
 | `capture(**kwargs)` | Capture a source, snippet, or observation |
 | `entity(**kwargs)` | Create, alias, resolve, or merge entities |
-| `find_or_create_entity(label, entity_type?, agent_id?)` | Convenience: create or find an entity by label |
+| `find_or_create_entity(label, entity_type?, agent_id?)` | Convenience: create or find an entity by label (generic fallback) |
+| `find_or_create_person(label, props?, agent_id?)` | Find or create a Person entity |
+| `find_or_create_organization(label, props?, agent_id?)` | Find or create an Organization entity |
+| `find_or_create_nation(label, props?, agent_id?)` | Find or create a Nation entity |
+| `find_or_create_event(label, props?, agent_id?)` | Find or create an Event entity |
+| `find_or_create_place(label, props?, agent_id?)` | Find or create a Place entity |
+| `find_or_create_concept(label, props?, agent_id?)` | Find or create a Concept entity |
+| `add_claim(label, props?, agent_id?)` | Add a Claim node |
+| `add_evidence(label, props?, agent_id?)` | Add an Evidence node |
+| `add_observation(label, props?, agent_id?)` | Add an Observation node |
+
+**Typed entity example:**
+
+```python
+person = graph.find_or_create_person("Marie Curie", props={"nationality": "Polish"})
+org = graph.find_or_create_organization("CERN", props={"org_type": "intergovernmental"})
+concept = graph.find_or_create_concept("Nuclear Physics")
+
+# find_or_create_entity() still works as a generic fallback for any entity type
+entity = graph.find_or_create_entity("Some Entity")
+```
 
 ### Epistemic Layer
 
