@@ -451,6 +451,32 @@ class MindGraph:
     def delete_node(self, uid: str) -> None:
         self._request("DELETE", f"/node/{uid}")
 
+    def batch_delete_nodes(
+        self,
+        uids: list[str] | None = None,
+        agent_id: str | None = None,
+        filter: dict[str, Any] | None = None,
+        reason: str | None = None,
+        by: str | None = None,
+        hard_purge: bool = False,
+    ) -> dict[str, Any]:
+        """Batch tombstone-cascade nodes by UIDs, agent_id, and/or filter.
+
+        Returns counts of nodes/edges tombstoned and purged.
+        """
+        body: dict[str, Any] = {"hard_purge": hard_purge}
+        if uids:
+            body["uids"] = uids
+        if agent_id:
+            body["agent_id"] = agent_id
+        if filter:
+            body["filter"] = filter
+        if reason:
+            body["reason"] = reason
+        if by:
+            body["by"] = by
+        return self._request("POST", "/nodes/delete", body)
+
     def get_node_history(self, uid: str) -> list[dict[str, Any]]:
         return self._request("GET", f"/node/{uid}/history")
 
