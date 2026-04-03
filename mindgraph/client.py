@@ -580,7 +580,16 @@ class MindGraph:
         node_type: str | None = None,
         layer: str | None = None,
         limit: int | None = None,
-    ) -> list[dict[str, Any]]:
+        min_score: float | None = None,
+        include_edges: bool = False,
+        include_chunks: bool = False,
+    ) -> list[dict[str, Any]] | dict[str, Any]:
+        """Full-text search over nodes.
+
+        When ``include_edges`` or ``include_chunks`` is True the response is an
+        enriched dict with ``results``, ``edges``, and ``chunks`` keys.
+        Otherwise a flat list of search results is returned.
+        """
         body: dict[str, Any] = {"query": query}
         if node_type:
             body["node_type"] = node_type
@@ -588,6 +597,12 @@ class MindGraph:
             body["layer"] = layer
         if limit:
             body["limit"] = limit
+        if min_score is not None:
+            body["min_score"] = min_score
+        if include_edges:
+            body["include_edges"] = True
+        if include_chunks:
+            body["include_chunks"] = True
         return self._request("POST", "/search", body)
 
     def hybrid_search(
