@@ -991,3 +991,58 @@ class MindGraph:
     def clear_graph(self) -> dict[str, Any]:
         return self._request("POST", "/clear")
 
+    # ── Wiki ──────────────────────────────────────────────────────────────
+
+    def list_articles(
+        self,
+        *,
+        article_type: str | None = None,
+        covers_node_type: str | None = None,
+        search: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
+        """List wiki articles with optional filters."""
+        params: dict[str, str] = {}
+        if article_type:
+            params["article_type"] = article_type
+        if covers_node_type:
+            params["covers_node_type"] = covers_node_type
+        if search:
+            params["search"] = search
+        if limit is not None:
+            params["limit"] = str(limit)
+        if offset is not None:
+            params["offset"] = str(offset)
+        qs = "&".join(f"{k}={v}" for k, v in params.items())
+        return self._request("GET", f"/wiki/articles?{qs}" if qs else "/wiki/articles")
+
+    def get_article(self, uid: str) -> dict[str, Any]:
+        """Get a single wiki article by UID."""
+        return self._request("GET", f"/wiki/article/{uid}")
+
+    def get_article_by_subject(self, subject_uid: str) -> dict[str, Any] | None:
+        """Find the article that covers or summarizes a given entity/document UID."""
+        try:
+            return self._request("GET", f"/wiki/article/by-subject/{subject_uid}")
+        except MindGraphError as e:
+            if e.status == 404:
+                return None
+            raise
+
+    def update_article(self, uid: str, content: str) -> dict[str, Any]:
+        """Update an article's markdown content (user editing)."""
+        return self._request("PATCH", f"/wiki/article/{uid}", {"content": content})
+
+    def compile_document(self, doc_uid: str) -> dict[str, Any]:
+        """Trigger wiki compilation for a specific document."""
+        return self._request("POST", f"/wiki/compile/{doc_uid}")
+
+    def compile_entity(self, entity_uid: str) -> dict[str, Any]:
+        """Trigger wiki compilation for a specific entity."""
+        return self._request("POST", f"/wiki/compile/entity/{entity_uid}")
+
+    def compile_all(self) -> dict[str, Any]:
+        """Backfill: compile articles for all documents and eligible entities."""
+        return self._request("POST", "/wiki/compile/all")
+
