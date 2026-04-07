@@ -929,30 +929,49 @@ class MindGraph:
         self,
         query: str,
         *,
-        k: int | None = None,
-        depth: int | None = None,
+        node_limit: int | None = None,
+        article_limit: int | None = None,
+        chunk_limit: int | None = None,
         node_types: list[str] | None = None,
         layer: str | None = None,
-        include_chunks: bool | None = None,
         include_graph: bool | None = None,
         min_similarity: float | None = None,
     ) -> dict[str, Any]:
+        """Retrieve context from the knowledge graph.
+
+        Returns articles (synthesized wiki summaries), graph nodes with
+        source_documents provenance, and optionally raw chunks.
+
+        Args:
+            query: Natural language search query.
+            node_limit: Max graph nodes (default 10).
+            article_limit: Max wiki articles (default 3). Set 0 to skip.
+            chunk_limit: Max raw chunks (default 0). Set >0 to include source text.
+            node_types: Filter to specific node types.
+            layer: Filter to a specific layer.
+            include_graph: Include graph nodes and edges (default True).
+            min_similarity: Minimum similarity threshold.
+        """
         body: dict[str, Any] = {"query": query}
-        if k is not None:
-            body["k"] = k
-        if depth is not None:
-            body["depth"] = depth
+        if node_limit is not None:
+            body["node_limit"] = node_limit
+        if article_limit is not None:
+            body["article_limit"] = article_limit
+        if chunk_limit is not None:
+            body["chunk_limit"] = chunk_limit
         if node_types:
             body["node_types"] = node_types
         if layer:
             body["layer"] = layer
-        if include_chunks is not None:
-            body["include_chunks"] = include_chunks
         if include_graph is not None:
             body["include_graph"] = include_graph
         if min_similarity is not None:
             body["min_similarity"] = min_similarity
         return self._request("POST", "/retrieve/context", body)
+
+    def backfill_node_sources(self) -> dict[str, Any]:
+        """Backfill node_source provenance from existing ExtractedFrom edges."""
+        return self._request("POST", "/backfill/node-sources", {})
 
     def list_jobs(self) -> list[dict[str, Any]]:
         return self._request("GET", "/jobs")
