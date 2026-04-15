@@ -24,6 +24,7 @@ class MindGraph:
         *,
         api_key: str | None = None,
         jwt: str | None = None,
+        org_id: str | None = None,
         timeout: float = 30.0,
         max_retries: int = 3,
         retry_backoff: float = 1.0,
@@ -36,6 +37,8 @@ class MindGraph:
             headers["Authorization"] = f"Bearer {api_key}"
         elif jwt:
             headers["Authorization"] = f"Bearer {jwt}"
+        if org_id:
+            headers["X-MindGraph-Org"] = org_id
         self._client = httpx.Client(
             base_url=self.base_url, headers=headers, timeout=timeout
         )
@@ -1064,4 +1067,3 @@ class MindGraph:
     def compile_all(self) -> dict[str, Any]:
         """Backfill: compile articles for all documents and eligible entities."""
         return self._request("POST", "/wiki/compile/all")
-
