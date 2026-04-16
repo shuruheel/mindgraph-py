@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.1 (2026-04-16)
+
+### Docs
+
+- README: correct `add_claim` / `add_evidence` / `add_observation` signatures and `find_or_create_entity` parameter name to match `mindgraph/client.py`.
+- README: remove Management (Cloud only) section — those methods were never part of the SDK. Account sign-up, login, and API key management live in the [MindGraph dashboard](https://mindgraph.cloud/dashboard).
+
+No code changes in this release.
+
 ## 0.4.0 (2026-04-16)
 
 ### Synthesis (Projects)

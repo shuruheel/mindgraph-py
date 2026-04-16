@@ -50,16 +50,16 @@ Supports context manager protocol (`with` statement) for automatic cleanup.
 |--------|-------------|
 | `capture(**kwargs)` | Capture a source, snippet, or observation |
 | `entity(**kwargs)` | Create, alias, resolve, or merge entities |
-| `find_or_create_entity(label, entity_type?, agent_id?)` | Convenience: create or find an entity by label (generic fallback) |
+| `find_or_create_entity(label, props?, agent_id?)` | Convenience: create or find an entity by label (generic fallback) |
 | `find_or_create_person(label, props?, agent_id?)` | Find or create a Person entity |
 | `find_or_create_organization(label, props?, agent_id?)` | Find or create an Organization entity |
 | `find_or_create_nation(label, props?, agent_id?)` | Find or create a Nation entity |
 | `find_or_create_event(label, props?, agent_id?)` | Find or create an Event entity |
 | `find_or_create_place(label, props?, agent_id?)` | Find or create a Place entity |
 | `find_or_create_concept(label, props?, agent_id?)` | Find or create a Concept entity |
-| `add_claim(label, props?, agent_id?)` | Add a Claim node |
-| `add_evidence(label, props?, agent_id?)` | Add an Evidence node |
-| `add_observation(label, props?, agent_id?)` | Add an Observation node |
+| `add_claim(label, content, confidence?, agent_id?)` | Add a Claim node via the argument endpoint |
+| `add_evidence(label, description, agent_id?)` | Add an Evidence node attached to a claim |
+| `add_observation(label, description, agent_id?)` | Add an Observation node |
 
 **Typed entity example:**
 
@@ -186,16 +186,7 @@ status = graph.get_job(job["job_id"])
 | `health()` | Health check |
 | `stats()` | Graph-wide statistics |
 
-### Management (Cloud only)
-
-| Method | Description |
-|--------|-------------|
-| `signup(email, password)` | Create a new account |
-| `login(email, password)` | Login and receive JWT |
-| `create_api_key(name?)` | Create an API key |
-| `list_api_keys()` | List all API keys |
-| `revoke_api_key(key_id)` | Revoke an API key |
-| `get_usage()` | Get usage statistics |
+> Account sign-up, login, and API key management live in the [MindGraph dashboard](https://mindgraph.cloud/dashboard) — not the SDK. Get your API key there, then pass it to the `MindGraph` constructor.
 
 ## Examples
 
