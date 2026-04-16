@@ -1067,3 +1067,47 @@ class MindGraph:
     def compile_all(self) -> dict[str, Any]:
         """Backfill: compile articles for all documents and eligible entities."""
         return self._request("POST", "/wiki/compile/all")
+
+    # ---- Synthesis (Projects) ----
+
+    def signals(
+        self,
+        project_uid: str,
+        *,
+        signals: str | None = None,
+        target_types: str | None = None,
+    ) -> dict[str, Any]:
+        """Mine cross-document structural signals for a project's corpus.
+
+        Returns entity bridges, claim hubs, ranked/clustered claim hubs,
+        theory support gaps, concept clusters, analogy candidates, and
+        dialectical pairs. Blocking; no LLM calls.
+
+        Args:
+            project_uid: UID of the Project node.
+            signals: Comma-separated subset of signal names to compute
+                (e.g. ``"clustered_claim_hubs,dialectical_pairs"``). If
+                omitted, all signals run.
+            target_types: Comma-separated node types filter for
+                ``entity_bridges`` and ``claim_hubs``.
+        """
+        params: dict[str, str] = {}
+        if signals is not None:
+            params["signals"] = signals
+        if target_types is not None:
+            params["target_types"] = target_types
+        qs = "&".join(f"{k}={v}" for k, v in params.items())
+        path = f"/synthesis/signals/{project_uid}"
+        if qs:
+            path = f"{path}?{qs}"
+        return self._request("GET", path)
+
+    def run_synthesis(self, project_uid: str) -> dict[str, Any]:
+        """Spawn a background synthesis job for a project.
+
+        Mines signals, selects top idea clusters, runs LLM synthesis,
+        and persists candidate Article nodes linked via ``Covers`` edges.
+
+        Returns ``{"job_id": str}``; poll with :meth:`get_job`.
+        """
+        return self._request("POST", f"/synthesis/run/{project_uid}")

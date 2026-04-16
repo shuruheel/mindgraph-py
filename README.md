@@ -111,6 +111,23 @@ entity = graph.find_or_create_entity("Some Entity")
 | `governance(**kwargs)` | Create policies, set safety budgets, request/resolve approvals |
 | `execution(**kwargs)` | Track execution lifecycle and register agents |
 
+### Synthesis (Projects)
+
+Scope a corpus to a `Project` (via `commit(action="project", ...)` then link documents with `PartOfProject`), then mine cross-document signals and generate synthesis articles.
+
+| Method | Description |
+|--------|-------------|
+| `signals(project_uid, *, signals?, target_types?)` | Mine cross-document structural signals for a project |
+| `run_synthesis(project_uid)` | Spawn async synthesis job that turns top clusters into Article nodes; returns `{"job_id": ...}` |
+
+```python
+project = graph.commit(action="project", label="Q2 China strategy")
+# ...link documents to the project via PartOfProject edges...
+signals = graph.signals(project["uid"], signals="clustered_claim_hubs,dialectical_pairs")
+job = graph.run_synthesis(project["uid"])
+status = graph.get_job(job["job_id"])
+```
+
 ### CRUD
 
 | Method | Description |

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0 (2026-04-16)
+
+### Synthesis (Projects)
+
+Scoped-corpus synthesis: mine cross-document signals for a `Project` and turn top idea clusters into Article nodes via a background job.
+
+- `signals(project_uid, *, signals=None, target_types=None)` — `GET /synthesis/signals/{project_uid}`. Returns entity bridges, claim hubs, ranked/clustered claim hubs, theory support gaps, concept clusters, analogy candidates, and dialectical pairs.
+- `run_synthesis(project_uid)` — `POST /synthesis/run/{project_uid}`. Spawns a background synthesis job and returns `{"job_id": ...}`; poll with `get_job()`.
+
 ## 0.2.0 (2026-03-30)
 
 ### New Entity Types
