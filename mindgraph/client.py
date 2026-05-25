@@ -1111,3 +1111,301 @@ class MindGraph:
         Returns ``{"job_id": str}``; poll with :meth:`get_job`.
         """
         return self._request("POST", f"/synthesis/run/{project_uid}")
+
+    # ========================================================================
+    # Operational Ontology Layer (Layer 7)
+    # ========================================================================
+
+    # ---- Schema management (cloud Postgres) ----
+
+    def list_ontology_schemas(self) -> dict[str, Any]:
+        """List ontology schemas for the authenticated org."""
+        return self._request("GET", "/v1/ontology/schemas")
+
+    def get_ontology_schema(self, schema_id: str) -> dict[str, Any]:
+        """Get one schema with its object types + relation types."""
+        return self._request("GET", f"/v1/ontology/schemas/{schema_id}")
+
+    def create_ontology_schema(
+        self, *, name: str, description: str | None = None
+    ) -> dict[str, Any]:
+        """Create a draft schema."""
+        body: dict[str, Any] = {"name": name}
+        if description is not None:
+            body["description"] = description
+        return self._request("POST", "/v1/ontology/schemas", body)
+
+    def update_ontology_schema(
+        self, schema_id: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Update a draft schema's name or description."""
+        return self._request("PATCH", f"/v1/ontology/schemas/{schema_id}", kwargs)
+
+    def activate_ontology_schema(self, schema_id: str) -> dict[str, Any]:
+        """Mark a draft schema active. Auto-deprecates the previous active schema."""
+        return self._request(
+            "POST", f"/v1/ontology/schemas/{schema_id}/activate"
+        )
+
+    def deprecate_ontology_schema(self, schema_id: str) -> dict[str, Any]:
+        return self._request(
+            "POST", f"/v1/ontology/schemas/{schema_id}/deprecate"
+        )
+
+    def archive_ontology_schema(self, schema_id: str) -> dict[str, Any]:
+        """Soft-delete (archive) a schema."""
+        return self._request("DELETE", f"/v1/ontology/schemas/{schema_id}")
+
+    def propose_ontology_schema(self, **kwargs: Any) -> dict[str, Any]:
+        """Kick off an LLM-driven schema proposal.
+
+        Returns ``{"schema_id": str, "job_id": str}`` immediately; poll
+        ``get_ontology_schema(schema_id)`` for progressive state.
+
+        Recognized kwargs: description, template_hint, source_uids,
+        source_documents, target_use_case, example_objects, example_queries,
+        desired_workflows, parent_schema_id.
+        """
+        return self._request("POST", "/v1/ontology/propose-schema", kwargs)
+
+    def test_ontology_schema(
+        self, schema_id: str, *, example_queries: list[str] | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if example_queries is not None:
+            body["example_queries"] = example_queries
+        return self._request(
+            "POST", f"/v1/ontology/schemas/{schema_id}/test", body
+        )
+
+    # ---- Sub-resources ----
+
+    def add_ontology_object_type(
+        self, schema_id: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        """Create an object type on a schema.
+
+        Recognized kwargs: name (required), display_name, description, fields,
+        required_fields, identity_fields, aliases, examples, extraction_hints,
+        default_confidence, review_policy.
+        """
+        return self._request(
+            "POST", f"/v1/ontology/schemas/{schema_id}/object-types", kwargs
+        )
+
+    def update_ontology_object_type(
+        self, schema_id: str, type_id: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        return self._request(
+            "PATCH",
+            f"/v1/ontology/schemas/{schema_id}/object-types/{type_id}",
+            kwargs,
+        )
+
+    def delete_ontology_object_type(
+        self, schema_id: str, type_id: str
+    ) -> dict[str, Any]:
+        return self._request(
+            "DELETE",
+            f"/v1/ontology/schemas/{schema_id}/object-types/{type_id}",
+        )
+
+    def add_ontology_relation_type(
+        self, schema_id: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        return self._request(
+            "POST", f"/v1/ontology/schemas/{schema_id}/relation-types", kwargs
+        )
+
+    def update_ontology_relation_type(
+        self, schema_id: str, type_id: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        return self._request(
+            "PATCH",
+            f"/v1/ontology/schemas/{schema_id}/relation-types/{type_id}",
+            kwargs,
+        )
+
+    def delete_ontology_relation_type(
+        self, schema_id: str, type_id: str
+    ) -> dict[str, Any]:
+        return self._request(
+            "DELETE",
+            f"/v1/ontology/schemas/{schema_id}/relation-types/{type_id}",
+        )
+
+    # ---- Proposals ----
+
+    def list_ontology_proposals(
+        self,
+        *,
+        status: str | None = None,
+        schema_id: str | None = None,
+        object_type: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> dict[str, Any]:
+        params: dict[str, str] = {}
+        if status is not None:
+            params["status"] = status
+        if schema_id is not None:
+            params["schema_id"] = schema_id
+        if object_type is not None:
+            params["object_type"] = object_type
+        if limit is not None:
+            params["limit"] = str(limit)
+        if offset is not None:
+            params["offset"] = str(offset)
+        qs = "&".join(f"{k}={v}" for k, v in params.items())
+        path = "/v1/ontology/proposals"
+        if qs:
+            path = f"{path}?{qs}"
+        return self._request("GET", path)
+
+    def get_ontology_proposal(self, proposal_id: str) -> dict[str, Any]:
+        return self._request("GET", f"/v1/ontology/proposals/{proposal_id}")
+
+    def patch_ontology_proposal(
+        self, proposal_id: str, *, edits: dict[str, Any]
+    ) -> dict[str, Any]:
+        return self._request(
+            "PATCH", f"/v1/ontology/proposals/{proposal_id}", {"edits": edits}
+        )
+
+    def approve_ontology_proposal(
+        self,
+        proposal_id: str,
+        *,
+        feedback: str | None = None,
+        edits: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if feedback is not None:
+            body["feedback"] = feedback
+        if edits is not None:
+            body["edits"] = edits
+        return self._request(
+            "POST", f"/v1/ontology/proposals/{proposal_id}/approve", body
+        )
+
+    def reject_ontology_proposal(
+        self, proposal_id: str, reason: str | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {}
+        if reason is not None:
+            body["reason"] = reason
+        return self._request(
+            "POST", f"/v1/ontology/proposals/{proposal_id}/reject", body
+        )
+
+    def apply_ontology_proposal(self, proposal_id: str) -> dict[str, Any]:
+        """Force-apply an approved proposal (idempotent retry for a stuck row)."""
+        return self._request(
+            "POST", f"/v1/ontology/proposals/{proposal_id}/apply"
+        )
+
+    def batch_approve_ontology_proposals(
+        self, ids: list[str], feedback: str | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"ids": ids}
+        if feedback is not None:
+            body["feedback"] = feedback
+        return self._request(
+            "POST", "/v1/ontology/proposals/batch-approve", body
+        )
+
+    def batch_reject_ontology_proposals(
+        self, ids: list[str], reason: str | None = None
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"ids": ids}
+        if reason is not None:
+            body["reason"] = reason
+        return self._request(
+            "POST", "/v1/ontology/proposals/batch-reject", body
+        )
+
+    # ---- Retrieval (graph server) ----
+
+    def query_ontology(
+        self, *, query: str, schema_id: str, **kwargs: Any
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {"query": query, "schema_id": schema_id}
+        body.update(kwargs)
+        return self._request("POST", "/ontology/query", body)
+
+    def get_domain_object(self, uid: str) -> dict[str, Any]:
+        return self._request("GET", f"/ontology/object/{uid}")
+
+    def get_domain_object_context(
+        self, uid: str, *, depth: int = 2
+    ) -> dict[str, Any]:
+        return self._request(
+            "GET", f"/ontology/object/{uid}/context?depth={depth}"
+        )
+
+    def get_domain_object_history(self, uid: str) -> dict[str, Any]:
+        return self._request("GET", f"/ontology/object/{uid}/history")
+
+    def list_domain_objects(
+        self,
+        *,
+        schema_id: str,
+        object_type: str | None = None,
+        limit: int | None = None,
+        offset: int | None = None,
+        sort: str | None = None,
+    ) -> dict[str, Any]:
+        params: dict[str, str] = {"schema_id": schema_id}
+        if object_type is not None:
+            params["object_type"] = object_type
+        if limit is not None:
+            params["limit"] = str(limit)
+        if offset is not None:
+            params["offset"] = str(offset)
+        if sort is not None:
+            params["sort"] = sort
+        qs = "&".join(f"{k}={v}" for k, v in params.items())
+        return self._request("GET", f"/ontology/objects?{qs}")
+
+    def search_domain_objects(self, query: str, **kwargs: Any) -> dict[str, Any]:
+        """Hybrid (FTS + semantic) search over domain objects.
+
+        Recognized kwargs: schema_id, object_types, limit.
+        Returns ``{"items": [{"object": ..., "score": float}]}``.
+        """
+        body: dict[str, Any] = {"query": query}
+        body.update(kwargs)
+        return self._request("POST", "/ontology/objects/search", body)
+
+    def link_domain_objects(
+        self,
+        *,
+        from_uid: str,
+        to_uid: str,
+        relation_type: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "create",
+            "from_uid": from_uid,
+            "to_uid": to_uid,
+            "relation_type": relation_type,
+        }
+        body.update(kwargs)
+        return self._request("POST", "/ontology/relation", body)
+
+    # ---- Extraction ----
+
+    def extract_ontology(
+        self,
+        *,
+        ontology_schema_id: str,
+        source_uids: list[str],
+        mode: str = "respect_policies",
+    ) -> dict[str, Any]:
+        body = {
+            "ontology_schema_id": ontology_schema_id,
+            "source_uids": source_uids,
+            "mode": mode,
+        }
+        return self._request("POST", "/ontology/extract", body)
