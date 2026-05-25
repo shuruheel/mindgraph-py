@@ -1401,11 +1401,17 @@ class MindGraph:
         *,
         ontology_schema_id: str,
         source_uids: list[str],
-        mode: str = "respect_policies",
+        mode: str | None = None,
     ) -> dict[str, Any]:
-        body = {
+        """Batch-extract ontology objects from existing documents/chunks.
+
+        ``mode`` is one of ``"propose_only"``, ``"respect_policies"`` (server
+        default), or ``"force_auto_apply"``. Omit to let the server pick.
+        """
+        body: dict[str, Any] = {
             "ontology_schema_id": ontology_schema_id,
             "source_uids": source_uids,
-            "mode": mode,
         }
+        if mode is not None:
+            body["mode"] = mode
         return self._request("POST", "/ontology/extract", body)
