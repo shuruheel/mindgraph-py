@@ -405,6 +405,12 @@ class MindGraph:
 
     # ---- Cross-cutting ----
 
+    def merge_candidates(self) -> list[dict[str, Any]]:
+        """Pending merge candidates: suspected duplicate pairs recorded by the
+        dedup pipeline's ambiguous zone, awaiting merge/dismiss (server >= 1.3).
+        """
+        return self._request("POST", "/retrieve", {"action": "merge_candidates"})
+
     def retrieve(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Retrieve nodes by action. Returns a list of results.
 
