@@ -614,7 +614,16 @@ class MindGraph:
         k: int | None = None,
         node_types: list[str] | None = None,
         layer: str | None = None,
+        explain: bool = False,
     ) -> list[dict[str, Any]]:
+        """Hybrid BM25 + vector search with reciprocal rank fusion.
+
+        With ``explain=True`` each result carries a ``legs`` list — the
+        "why retrieved" detail: which legs (``fts``/``vec``) surfaced it,
+        the 1-based within-leg rank the fusion used, and the leg's raw
+        score. The fused ``score`` reconstructs as ``sum(1/(60 + rank))``.
+        Requires server >= 1.2.0; older servers ignore the flag.
+        """
         body: dict[str, Any] = {"action": "hybrid", "query": query}
         if k:
             body["k"] = k
@@ -622,6 +631,8 @@ class MindGraph:
             body["node_types"] = node_types
         if layer:
             body["layer"] = layer
+        if explain:
+            body["explain"] = True
         return self._request("POST", "/retrieve", body)
 
     # ---- Nodes listing ----
