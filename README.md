@@ -144,7 +144,8 @@ status = graph.get_job(job["job_id"])
 | Method | Description |
 |--------|-------------|
 | `search(query, node_type?, layer?, limit?)` | Full-text search |
-| `hybrid_search(query, k?, node_types?, layer?)` | BM25 + vector search with rank fusion |
+| `hybrid_search(query, k?, node_types?, layer?, explain?)` | BM25 + vector search with rank fusion; `explain=True` attaches per-leg contributions (`legs`: which legs surfaced each result, the within-leg rank the fusion used, and the leg's raw score) |
+| `merge_candidates()` | Pending duplicate pairs recorded by the dedup pipeline, awaiting merge/dismiss |
 
 ### Traversal
 
