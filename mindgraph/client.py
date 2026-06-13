@@ -419,6 +419,33 @@ class MindGraph:
         """
         return self._request("POST", "/retrieve", kwargs)
 
+    def preferences(
+        self,
+        query: str | None = None,
+        k: int = 10,
+        limit: int | None = None,
+        offset: int | None = None,
+    ) -> list[dict[str, Any]]:
+        """Retrieve the user's preferences (stated or learned).
+
+        With *query*, returns topic-relevant preferences — the semantic leg
+        bridges low lexical overlap, so ``"suggest a hotel"`` surfaces a
+        stored ``"loved the rooftop pool"``. Without *query*, returns all
+        preferences, most salient first. Either way the result is a list of
+        search results (``{"node": ..., "score": ...}``); ``score`` is
+        relevance with a query, salience without. Use this for
+        advice/recommendation requests so answers reflect what the user likes.
+        """
+        body: dict[str, Any] = {"action": "preferences"}
+        if query is not None:
+            body["query"] = query
+            body["k"] = k
+        if limit is not None:
+            body["limit"] = limit
+        if offset is not None:
+            body["offset"] = offset
+        return self._request("POST", "/retrieve", body)
+
     def traverse(self, **kwargs: Any) -> Any:
         return self._request("POST", "/traverse", kwargs)
 

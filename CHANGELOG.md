@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.7.0 (2026-06-14)
+
+### Added
+
+- `preferences(query=None, k=10, limit=None, offset=None)` — retrieve the
+  user's stated/learned preferences (server ≥ 1.4.0). With a *query*,
+  topic-relevant preferences via the semantic leg; without one, all
+  preferences by salience. Returns a list of search results
+  (`{"node": ..., "score": ...}`). For advice/recommendation requests.
+
+(Changelog note: 0.5.0–0.6.0 were published without changelog entries; this
+file resumes at 0.7.0.)
+
 ## 0.4.1 (2026-04-16)
 
 ### Docs
