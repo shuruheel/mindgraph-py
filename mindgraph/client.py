@@ -1231,7 +1231,23 @@ class MindGraph:
 
         Recognized kwargs: name (required), display_name, description, fields,
         required_fields, identity_fields, aliases, examples, extraction_hints,
-        default_confidence, review_policy.
+        default_confidence, review_policy, backing.
+
+        `backing` binds the type to an external source (the semantic-contract
+        mapping). Omit it for extracted/authored types. SQL example::
+
+            backing={
+                "kind": "sql",
+                "sources": [{
+                    "connection_ref": "conn_1",
+                    "table": "customers",
+                    "key": "id",
+                    "field_map": {"name": {"column": "full_name", "mode": "indexed"}},
+                }],
+                "primary_key": "id",
+                "title_field": "name",
+                "sync": {"mode": "incremental", "cursor_column": "updated_at"},
+            }
         """
         return self._request(
             "POST", f"/v1/ontology/schemas/{schema_id}/object-types", kwargs
