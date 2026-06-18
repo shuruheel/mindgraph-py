@@ -128,6 +128,27 @@ job = graph.run_synthesis(project["uid"])
 status = graph.get_job(job["job_id"])
 ```
 
+### Operational Ontology (Layer 7)
+
+Define typed domain objects (Customer, Order, Contract…) as a semantic contract and either **bind them to a SQL database** or extract them from documents — fused onto one object. Connecting a database (credentials/sync) is done in the dashboard; the SDK proposes/reviews schemas, queries, and lists the generated agent read tools.
+
+| Method | Description |
+|--------|-------------|
+| `propose_ontology_schema(...)` | Draft a schema from a description (+ optional sample docs); returns `{"schema_id", "job_id"}` |
+| `activate_ontology_schema(id)` / `get_ontology_schema(id)` / `list_ontology_schemas()` | Schema lifecycle |
+| `list_ontology_proposals(...)` / `approve_ontology_proposal(id)` / `reject_ontology_proposal(id)` | Review extracted-object proposals |
+| `query_ontology(query=..., schema_id=...)` | Typed retrieval with the cognitive overlay fused in |
+| `list_ontology_tools()` | The generated read-tool manifest (`search_/get_/summarize_<obj>`) the MCP server renders |
+
+```python
+res = graph.propose_ontology_schema(description="Clients, orders, contracts.")
+graph.activate_ontology_schema(res["schema_id"])
+tools = graph.list_ontology_tools()
+ctx = graph.query_ontology(query="Which customers are a churn risk?", schema_id=res["schema_id"])
+```
+
+See the [Operational Ontology](https://mindgraph.cloud/docs/ontology) and [Connect a database](https://mindgraph.cloud/docs/connect) docs.
+
 ### CRUD
 
 | Method | Description |

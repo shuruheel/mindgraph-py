@@ -1384,6 +1384,18 @@ class MindGraph:
             "POST", "/v1/ontology/proposals/batch-reject", body
         )
 
+    def list_ontology_tools(self) -> dict[str, Any]:
+        """Read-only agent tool manifest for the org's active ontology schema(s).
+
+        Returns ``{"tools": [...]}`` — per active object type, descriptors for
+        ``search_<objs>`` / ``get_<obj>`` / ``summarize_<obj>`` that an MCP
+        server (or your own agent loop) renders into tools and dispatches into
+        the ``/ontology`` read endpoints. ``summarize_<obj>`` returns the object
+        — whether mapped from a connected SQL database or extracted from
+        documents — plus its cognitive context (claims, risks, decisions).
+        """
+        return self._request("GET", "/v1/ontology/tools")
+
     # ---- Retrieval (graph server) ----
 
     def query_ontology(
