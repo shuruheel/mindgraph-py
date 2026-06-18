@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.8.0 (2026-06-17)
+
+### Added
+
+- `list_ontology_tools()` — the generated read-tool manifest
+  (`GET /v1/ontology/tools`): per active object type, descriptors for
+  `search_<objs>` / `get_<obj>` / `summarize_<obj>` that an MCP server (or your
+  own agent loop) renders into tools. `summarize_<obj>` returns the object —
+  whether mapped from a connected SQL database or extracted from documents —
+  plus its cognitive context. Parity with the TypeScript SDK.
+- `backing` kwarg on ontology object-type creation — bind a type to an external
+  SQL source (Layer 7 semantic contract). Connection management itself stays in
+  the dashboard.
+
 ## 0.7.0 (2026-06-14)
 
 ### Added
