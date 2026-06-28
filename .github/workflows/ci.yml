@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install (with dev deps)
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check mindgraph/
+
+      # Offline contract tests only. The live prod-mutating E2E
+      # (tests/test_integration.py) SKIPS here because MINDGRAPH_E2E is unset,
+      # so no API key / network is required.
+      - name: Test (offline)
+        run: pytest -q

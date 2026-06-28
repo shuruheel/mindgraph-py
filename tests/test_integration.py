@@ -2,7 +2,16 @@
 Comprehensive integration tests for the MindGraph Python SDK.
 Tests every public method against the live Cloud API.
 
-Run: API_KEY=mg_live_... pytest tests/test_integration.py -v
+WARNING: this suite is a LIVE, PROD-MUTATING E2E. It creates/updates/tombstones
+real nodes in whatever org the supplied key belongs to. It is OPT-IN ONLY and
+SKIPS by default so a plain `pytest` run (CI, publish) executes only the offline
+contract tests in tests/test_offline.py.
+
+To run it you must BOTH:
+  1. set MINDGRAPH_E2E=1 (explicit opt-in acknowledging it mutates a test org), and
+  2. provide an API_KEY (or MINDGRAPH_API_KEY) for a DEDICATED TEST org.
+
+Run: MINDGRAPH_E2E=1 API_KEY=mg_live_... pytest tests/test_integration.py -v
 """
 import os
 import pytest
@@ -11,8 +20,12 @@ from mindgraph import MindGraph
 
 API_KEY = os.environ.get("API_KEY") or os.environ.get("MINDGRAPH_API_KEY", "")
 BASE_URL = os.environ.get("BASE_URL", "https://api.mindgraph.cloud")
+E2E_OPT_IN = os.environ.get("MINDGRAPH_E2E", "").lower() in ("1", "true", "yes", "on")
 
-pytestmark = pytest.mark.skipif(not API_KEY, reason="API_KEY not set")
+pytestmark = pytest.mark.skipif(
+    not (E2E_OPT_IN and API_KEY),
+    reason="live prod-mutating E2E: set MINDGRAPH_E2E=1 AND API_KEY to opt in",
+)
 
 
 @pytest.fixture(scope="module")

@@ -1,0 +1,33 @@
+name: Live E2E (manual)
+
+# Manual-only. This runs the LIVE, PROD-MUTATING integration suite
+# (tests/test_integration.py): it creates/updates/tombstones real nodes in the
+# org the key belongs to. NEVER point MINDGRAPH_E2E_API_KEY at a customer org —
+# use a DEDICATED TEST ORG key. Set it in repo secrets as MINDGRAPH_E2E_API_KEY.
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'API base URL to target (test org)'
+        required: false
+        default: 'https://api.mindgraph.cloud'
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install (with dev deps)
+        run: pip install -e ".[dev]"
+
+      - name: Live integration tests (mutates the test org)
+        env:
+          MINDGRAPH_E2E: '1'
+          API_KEY: ${{ secrets.MINDGRAPH_E2E_API_KEY }}
+          BASE_URL: ${{ github.event.inputs.base_url }}
+        run: pytest tests/test_integration.py -v
