@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.9.0 (2026-06-29)
+
+### Added
+
+- `ingest_document()` gains optional `page_offsets`, `page_count`, `mime_type`, and
+  `force_reingest`. `page_offsets` entries are `{"page", "char_start"}` where
+  `char_start` is a UTF-8 **byte** offset into `content`. Identical content reuses the
+  existing Document (response `deduplicated`). Server ≥ 1.5.0.
+- `retrieve_context()` responses: Claim/graph nodes may carry `source_chunks`
+  (citation provenance: chunk offsets, page range, matched quote, anchor selector)
+  and `believed_by` (per-agent assertion stance: `agent_uid`, `agent_label`,
+  `confidence`). Documented in the method docstring.
+- `backfill_anchors()` — start the `/backfill/anchors` job (populate
+  `ExtractedFrom.location` selectors for pre-existing edges).
+
 ## 0.8.0 (2026-06-17)
 
 ### Added

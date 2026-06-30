@@ -908,6 +908,10 @@ class MindGraph:
         citation_count: int | None = None,
         arxiv_id: str | None = None,
         language: str | None = None,
+        page_offsets: list[dict[str, Any]] | None = None,
+        page_count: int | None = None,
+        mime_type: str | None = None,
+        force_reingest: bool | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"content": content}
         if title:
@@ -944,6 +948,17 @@ class MindGraph:
             body["arxiv_id"] = arxiv_id
         if language:
             body["language"] = language
+        if page_offsets:
+            # Each entry is {"page": int (1-based), "char_start": int}, where
+            # char_start is a UTF-8 BYTE offset into `content` (not a codepoint
+            # count) — use len(s.encode("utf-8")), or pages drift on non-ASCII text.
+            body["page_offsets"] = page_offsets
+        if page_count is not None:
+            body["page_count"] = page_count
+        if mime_type:
+            body["mime_type"] = mime_type
+        if force_reingest is not None:
+            body["force_reingest"] = force_reingest
         return self._request("POST", "/ingest/document", body)
 
     def ingest_session(
@@ -989,6 +1004,19 @@ class MindGraph:
         Returns articles (synthesized wiki summaries), graph nodes with
         source_documents provenance, and optionally raw chunks.
 
+        Each graph node may also carry an optional ``source_chunks`` array of
+        citation-provenance spans. Each entry is a dict with keys:
+        ``chunk_uid`` (str), ``char_start``/``char_end`` (int|None, UTF-8 byte
+        offsets into the chunk), ``page_start``/``page_end`` (int|None, 1-based
+        page numbers, None if no page map), ``quote`` (str|None, the verbatim
+        source span when matched), and ``anchor`` (str|None, a JSON-encoded
+        Web-Annotation selector string).
+
+        Claim nodes may additionally carry an optional ``believed_by`` array of
+        per-agent stances. Each entry is a dict with keys: ``agent_uid`` (str),
+        ``agent_label`` (str), and ``confidence`` (float|None, the asserting
+        agent's certainty, None if unspecified).
+
         Args:
             query: Natural language search query.
             node_limit: Max graph nodes (default 10).
@@ -1019,6 +1047,13 @@ class MindGraph:
     def backfill_node_sources(self) -> dict[str, Any]:
         """Backfill node_source provenance from existing ExtractedFrom edges."""
         return self._request("POST", "/backfill/node-sources", {})
+
+    def backfill_anchors(self) -> dict[str, Any]:
+        """Backfill citation anchors (source_chunks spans) for existing graphs.
+
+        Returns a background job descriptor (e.g. ``{"job_id": ...}``).
+        """
+        return self._request("POST", "/backfill/anchors", {})
 
     def list_jobs(self) -> list[dict[str, Any]]:
         return self._request("GET", "/jobs")
