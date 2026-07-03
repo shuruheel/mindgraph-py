@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.9.1 (2026-07-03)
+
+### Docs
+
+- `traverse()` docstring documents the `path_cost` / `path_confidence` fields on
+  traversal steps (server ≥ mindgraph 1.6.0); responses are untyped dicts, so the
+  fields flow through without a code change.
+
 ## 0.9.0 (2026-06-29)
 
 ### Added

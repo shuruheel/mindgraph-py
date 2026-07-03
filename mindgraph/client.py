@@ -447,6 +447,11 @@ class MindGraph:
         return self._request("POST", "/retrieve", body)
 
     def traverse(self, **kwargs: Any) -> Any:
+        """POST /traverse. Steps in the response carry ``path_cost`` (sum of
+        -ln(edge weight) along the returned BFS path; lower = stronger) and
+        ``path_confidence`` (product of edge confidences; a ranking signal,
+        not a calibrated probability) — scores of the path returned, not the
+        optimal path."""
         return self._request("POST", "/traverse", kwargs)
 
     def evolve(self, **kwargs: Any) -> Any:
