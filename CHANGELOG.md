@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0 (2026-07-04)
+
+### Added
+
+- `export_provenance(document_uid)` - document-scoped PROV-O / CiTO /
+  W3C Web Annotation JSON-LD (`GET /export/prov`; server >= mindgraph 1.7.0).
+- Server 1.7.0 fields flow through the untyped dict responses without code
+  changes: Claim `valid_from`/`valid_until`/`polarity`/`modality`/
+  `quantification`/`subject`/`predicate`/`object`/`canonical_key`, retrieve
+  annotations `currently_valid`/`valid_at_time` (request field `valid_at`),
+  and the `top_k_paths` traverse action (`k`/`max_hops`/`max_cost`).
+
+
 ## 0.9.1 (2026-07-04)
 
 ### Docs
