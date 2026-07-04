@@ -766,6 +766,16 @@ class MindGraph:
     def export_graph(self) -> Any:
         return self._request("GET", "/export")
 
+    def export_provenance(self, document_uid: str) -> Any:
+        """One document's extraction provenance as JSON-LD (PROV-O + CiTO +
+        W3C Web Annotation anchors). Positions are chunk-relative UTF-8 byte
+        offsets (``mg:offsetUnit``)."""
+        from urllib.parse import quote
+
+        return self._request(
+            "GET", f"/export/prov?document_uid={quote(document_uid, safe='')}"
+        )
+
     def import_graph(self, data: Any) -> Any:
         return self._request("POST", "/import", data)
 
