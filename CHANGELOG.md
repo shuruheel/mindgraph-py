@@ -6,6 +6,8 @@
 
 - `export_provenance(document_uid)` - document-scoped PROV-O / CiTO /
   W3C Web Annotation JSON-LD (`GET /export/prov`; server >= mindgraph 1.7.0).
+- `schema_fill_stats(sample=..., layer=...)` - per-type live counts +
+  sampled per-field fill rates (`GET /stats/schema-fill`).
 - Server 1.7.0 fields flow through the untyped dict responses without code
   changes: Claim `valid_from`/`valid_until`/`polarity`/`modality`/
   `quantification`/`subject`/`predicate`/`object`/`canonical_key`, retrieve

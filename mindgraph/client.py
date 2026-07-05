@@ -87,6 +87,22 @@ class MindGraph:
     def stats(self) -> dict[str, Any]:
         return self._request("GET", "/stats")
 
+    def schema_fill_stats(
+        self, *, sample: int | None = None, layer: str | None = None
+    ) -> Any:
+        """Schema fill-rate report (measure-first tiering): per live node
+        type, exact live count + sampled per-field fill rates; fields under
+        5% flagged near-empty. ``sample`` caps per-type sampling (default
+        1000); ``layer`` restricts (e.g. "epistemic")."""
+        qs = "&".join(
+            f"{k}={v}"
+            for k, v in (("sample", sample), ("layer", layer))
+            if v is not None
+        )
+        return self._request(
+            "GET", f"/stats/schema-fill{'?' + qs if qs else ''}"
+        )
+
     # ---- Reality Layer ----
 
     def capture(self, **kwargs: Any) -> Any:
