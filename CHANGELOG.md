@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.11.0 (2026-07-07)
+
+### Added
+
+- `create_domain_object(schema_id=, object_type=, canonical_name=, **kwargs)`
+  → `POST /v1/ontology/objects` (auto-approved manual object create).
+- `ontology_stats(schema_id, sample=None)` → `GET /ontology/stats`
+  (per-type field fill rates + `near_empty` flags + identity collisions).
+- Ingest kwargs: `ontology_schema_id` on document/session/chunk, and
+  `participants` / `occurred_at` / `context` on document/session (feed
+  transcript participant-attribution; server >= mindgraph 1.8.0).
+- Server 1.8.0 fields flow through the untyped dict responses without code
+  changes: `source_documents` gain `ingested_by_name`/`occurred_at`, and
+  `/retrieve` accepts `include_sources`.
+
 ## 0.10.0 (2026-07-04)
 
 ### Added

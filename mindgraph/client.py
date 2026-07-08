@@ -901,6 +901,7 @@ class MindGraph:
         label: str | None = None,
         layers: list[str] | None = None,
         agent_id: str | None = None,
+        ontology_schema_id: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"content": content}
         if chunk_type:
@@ -915,6 +916,8 @@ class MindGraph:
             body["layers"] = layers
         if agent_id:
             body["agent_id"] = agent_id
+        if ontology_schema_id:
+            body["ontology_schema_id"] = ontology_schema_id
         return self._request("POST", "/ingest/chunk", body)
 
     def ingest_document(
@@ -943,6 +946,10 @@ class MindGraph:
         page_count: int | None = None,
         mime_type: str | None = None,
         force_reingest: bool | None = None,
+        ontology_schema_id: str | None = None,
+        participants: list[dict[str, Any]] | None = None,
+        occurred_at: str | None = None,
+        context: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"content": content}
         if title:
@@ -990,6 +997,15 @@ class MindGraph:
             body["mime_type"] = mime_type
         if force_reingest is not None:
             body["force_reingest"] = force_reingest
+        if ontology_schema_id:
+            body["ontology_schema_id"] = ontology_schema_id
+        if participants:
+            # Each entry is {"name": str, "organization": str|None, "role": str|None}.
+            body["participants"] = participants
+        if occurred_at:
+            body["occurred_at"] = occurred_at
+        if context:
+            body["context"] = context
         return self._request("POST", "/ingest/document", body)
 
     def ingest_session(
@@ -1002,6 +1018,10 @@ class MindGraph:
         chunk_overlap: float | None = None,
         layers: list[str] | None = None,
         agent_id: str | None = None,
+        ontology_schema_id: str | None = None,
+        participants: list[dict[str, Any]] | None = None,
+        occurred_at: str | None = None,
+        context: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {"content": content}
         if title:
@@ -1016,6 +1036,14 @@ class MindGraph:
             body["layers"] = layers
         if agent_id:
             body["agent_id"] = agent_id
+        if ontology_schema_id:
+            body["ontology_schema_id"] = ontology_schema_id
+        if participants:
+            body["participants"] = participants
+        if occurred_at:
+            body["occurred_at"] = occurred_at
+        if context:
+            body["context"] = context
         return self._request("POST", "/ingest/session", body)
 
     def retrieve_context(
@@ -1531,6 +1559,39 @@ class MindGraph:
         }
         body.update(kwargs)
         return self._request("POST", "/ontology/relation", body)
+
+    def ontology_stats(self, schema_id: str, sample: int | None = None) -> dict[str, Any]:
+        """Per-object-type coverage stats for a schema (C2f): field fill rates
+        (with a ``near_empty`` flag below 5%) and identity collisions, over a
+        bounded per-type sample (default 500, max 2000).
+        """
+        qs = f"schema_id={schema_id}"
+        if sample is not None:
+            qs += f"&sample={sample}"
+        return self._request("GET", f"/ontology/stats?{qs}")
+
+    def create_domain_object(
+        self,
+        *,
+        schema_id: str,
+        object_type: str,
+        canonical_name: str,
+        **kwargs: Any,
+    ) -> dict[str, Any]:
+        """Create a domain object by hand (auto-approved).
+
+        Returns ``{"uid": ..., "proposal_id": ...}``. Raises on 409 if an
+        object of the same type + canonical_name already exists, unless
+        ``allow_duplicate=True`` is passed. Extra kwargs (``fields``,
+        ``aliases``, ``identity``, ``confidence``) pass through.
+        """
+        body: dict[str, Any] = {
+            "schema_id": schema_id,
+            "object_type": object_type,
+            "canonical_name": canonical_name,
+        }
+        body.update(kwargs)
+        return self._request("POST", "/v1/ontology/objects", body)
 
     # ---- Extraction ----
 
