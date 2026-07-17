@@ -99,9 +99,7 @@ class MindGraph:
             for k, v in (("sample", sample), ("layer", layer))
             if v is not None
         )
-        return self._request(
-            "GET", f"/stats/schema-fill{'?' + qs if qs else ''}"
-        )
+        return self._request("GET", f"/stats/schema-fill{'?' + qs if qs else ''}")
 
     # ---- Reality Layer ----
 
@@ -500,9 +498,7 @@ class MindGraph:
             body["agent_id"] = agent_id
         return self._request("POST", "/node", body)
 
-    def update_node(
-        self, uid: str, **kwargs: Any
-    ) -> dict[str, Any]:
+    def update_node(self, uid: str, **kwargs: Any) -> dict[str, Any]:
         return self._request("PATCH", f"/node/{uid}", kwargs)
 
     def delete_node(self, uid: str) -> None:
@@ -775,6 +771,7 @@ class MindGraph:
 
     def resolve_alias(self, text: str) -> Any:
         from urllib.parse import quote
+
         return self._request("GET", f"/resolve?text={quote(text)}")
 
     # ---- Export / Import ----
@@ -840,7 +837,9 @@ class MindGraph:
 
     def reasoning_chain(self, uid: str, max_depth: int = 5) -> list[dict[str, Any]]:
         r = self._request(
-            "POST", "/traverse", {"action": "chain", "start_uid": uid, "max_depth": max_depth}
+            "POST",
+            "/traverse",
+            {"action": "chain", "start_uid": uid, "max_depth": max_depth},
         )
         return r.get("steps", []) if isinstance(r, dict) else r
 
@@ -1273,22 +1272,16 @@ class MindGraph:
             body["description"] = description
         return self._request("POST", "/v1/ontology/schemas", body)
 
-    def update_ontology_schema(
-        self, schema_id: str, **kwargs: Any
-    ) -> dict[str, Any]:
+    def update_ontology_schema(self, schema_id: str, **kwargs: Any) -> dict[str, Any]:
         """Update a draft schema's name or description."""
         return self._request("PATCH", f"/v1/ontology/schemas/{schema_id}", kwargs)
 
     def activate_ontology_schema(self, schema_id: str) -> dict[str, Any]:
         """Mark a draft schema active. Auto-deprecates the previous active schema."""
-        return self._request(
-            "POST", f"/v1/ontology/schemas/{schema_id}/activate"
-        )
+        return self._request("POST", f"/v1/ontology/schemas/{schema_id}/activate")
 
     def deprecate_ontology_schema(self, schema_id: str) -> dict[str, Any]:
-        return self._request(
-            "POST", f"/v1/ontology/schemas/{schema_id}/deprecate"
-        )
+        return self._request("POST", f"/v1/ontology/schemas/{schema_id}/deprecate")
 
     def archive_ontology_schema(self, schema_id: str) -> dict[str, Any]:
         """Soft-delete (archive) a schema."""
@@ -1312,15 +1305,11 @@ class MindGraph:
         body: dict[str, Any] = {}
         if example_queries is not None:
             body["example_queries"] = example_queries
-        return self._request(
-            "POST", f"/v1/ontology/schemas/{schema_id}/test", body
-        )
+        return self._request("POST", f"/v1/ontology/schemas/{schema_id}/test", body)
 
     # ---- Sub-resources ----
 
-    def add_ontology_object_type(
-        self, schema_id: str, **kwargs: Any
-    ) -> dict[str, Any]:
+    def add_ontology_object_type(self, schema_id: str, **kwargs: Any) -> dict[str, Any]:
         """Create an object type on a schema.
 
         Recognized kwargs: name (required), display_name, description, fields,
@@ -1388,6 +1377,20 @@ class MindGraph:
             f"/v1/ontology/schemas/{schema_id}/relation-types/{type_id}",
         )
 
+    def analyze_ontology_semantic_guidance(self, schema_id: str) -> dict[str, Any]:
+        """Generate inert semantic classifications for individual human review."""
+        return self._request(
+            "POST",
+            f"/v1/ontology/schemas/{schema_id}/semantic-guidance/analyze",
+            {},
+        )
+
+    def audit_ontology_duplicates(self, schema_id: str) -> dict[str, Any]:
+        """Run a read-only exact-identity collision audit; never merge graph data."""
+        return self._request(
+            "POST", f"/v1/ontology/schemas/{schema_id}/duplicates/audit", {}
+        )
+
     # ---- Proposals ----
 
     def list_ontology_proposals(
@@ -1396,6 +1399,8 @@ class MindGraph:
         status: str | None = None,
         schema_id: str | None = None,
         object_type: str | None = None,
+        proposal_type: str | None = None,
+        extract_job_id: str | None = None,
         limit: int | None = None,
         offset: int | None = None,
     ) -> dict[str, Any]:
@@ -1406,6 +1411,10 @@ class MindGraph:
             params["schema_id"] = schema_id
         if object_type is not None:
             params["object_type"] = object_type
+        if proposal_type is not None:
+            params["proposal_type"] = proposal_type
+        if extract_job_id is not None:
+            params["extract_job_id"] = extract_job_id
         if limit is not None:
             params["limit"] = str(limit)
         if offset is not None:
@@ -1454,9 +1463,7 @@ class MindGraph:
 
     def apply_ontology_proposal(self, proposal_id: str) -> dict[str, Any]:
         """Force-apply an approved proposal (idempotent retry for a stuck row)."""
-        return self._request(
-            "POST", f"/v1/ontology/proposals/{proposal_id}/apply"
-        )
+        return self._request("POST", f"/v1/ontology/proposals/{proposal_id}/apply")
 
     def batch_approve_ontology_proposals(
         self, ids: list[str], feedback: str | None = None
@@ -1464,9 +1471,7 @@ class MindGraph:
         body: dict[str, Any] = {"ids": ids}
         if feedback is not None:
             body["feedback"] = feedback
-        return self._request(
-            "POST", "/v1/ontology/proposals/batch-approve", body
-        )
+        return self._request("POST", "/v1/ontology/proposals/batch-approve", body)
 
     def batch_reject_ontology_proposals(
         self, ids: list[str], reason: str | None = None
@@ -1474,9 +1479,7 @@ class MindGraph:
         body: dict[str, Any] = {"ids": ids}
         if reason is not None:
             body["reason"] = reason
-        return self._request(
-            "POST", "/v1/ontology/proposals/batch-reject", body
-        )
+        return self._request("POST", "/v1/ontology/proposals/batch-reject", body)
 
     def list_ontology_tools(self) -> dict[str, Any]:
         """Read-only agent tool manifest for the org's active ontology schema(s).
@@ -1502,12 +1505,8 @@ class MindGraph:
     def get_domain_object(self, uid: str) -> dict[str, Any]:
         return self._request("GET", f"/ontology/object/{uid}")
 
-    def get_domain_object_context(
-        self, uid: str, *, depth: int = 2
-    ) -> dict[str, Any]:
-        return self._request(
-            "GET", f"/ontology/object/{uid}/context?depth={depth}"
-        )
+    def get_domain_object_context(self, uid: str, *, depth: int = 2) -> dict[str, Any]:
+        return self._request("GET", f"/ontology/object/{uid}/context?depth={depth}")
 
     def get_domain_object_history(self, uid: str) -> dict[str, Any]:
         return self._request("GET", f"/ontology/object/{uid}/history")
@@ -1560,7 +1559,9 @@ class MindGraph:
         body.update(kwargs)
         return self._request("POST", "/ontology/relation", body)
 
-    def ontology_stats(self, schema_id: str, sample: int | None = None) -> dict[str, Any]:
+    def ontology_stats(
+        self, schema_id: str, sample: int | None = None
+    ) -> dict[str, Any]:
         """Per-object-type coverage stats for a schema (C2f): field fill rates
         (with a ``near_empty`` flag below 5%) and identity collisions, over a
         bounded per-type sample (default 500, max 2000).

@@ -83,6 +83,29 @@ def make_client(capture: Capture, response_json: Any = None) -> MindGraph:
     return client
 
 
+def test_ontology_review_filters_and_schema_actions_are_exposed():
+    cap = Capture()
+    client = make_client(cap, response_json={"items": [], "limit": 50, "offset": 0})
+    client.list_ontology_proposals(
+        schema_id="schema-1",
+        proposal_type="semantic_match_candidate",
+        extract_job_id="job-1",
+    )
+    assert cap.method == "GET"
+    assert "schema_id=schema-1" in cap.full_path
+    assert "proposal_type=semantic_match_candidate" in cap.full_path
+    assert "extract_job_id=job-1" in cap.full_path
+
+    client.analyze_ontology_semantic_guidance("schema-1")
+    assert cap.method == "POST"
+    assert cap.path == "/v1/ontology/schemas/schema-1/semantic-guidance/analyze"
+
+    client.audit_ontology_duplicates("schema-1")
+    assert cap.method == "POST"
+    assert cap.path == "/v1/ontology/schemas/schema-1/duplicates/audit"
+    client.close()
+
+
 # ---------------------------------------------------------------------------
 # Sanity: the fixture itself is internally consistent.
 # ---------------------------------------------------------------------------
@@ -188,9 +211,7 @@ def test_contract_method_wire_shape(entry: dict):
 # ---------------------------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "entry", PASSTHROUGH, ids=[e["method"] for e in PASSTHROUGH]
-)
+@pytest.mark.parametrize("entry", PASSTHROUGH, ids=[e["method"] for e in PASSTHROUGH])
 def test_passthrough_method_forwards_action(entry: dict):
     cap = Capture()
     client = make_client(cap)
