@@ -290,7 +290,18 @@ CONTRACT: list[dict] = [
         "http_method": "POST",
         "path": "/intent/deliberation",
         "action": "resolve",
-        "required_fields": ["action", "decision_uid", "chosen_option_uid"],
+        # The optional resolve fields are asserted as required HERE (this
+        # fixture supplies them) so a wire-name typo goes red offline —
+        # serde on the server silently drops unknown keys.
+        "required_fields": [
+            "action",
+            "decision_uid",
+            "chosen_option_uid",
+            "informs_uid",
+            "as_of_date",
+            "session_id",
+            "retrieval_trace_id",
+        ],
         "positional": ["dec_1", "opt_1"],
         "args": {
             "informs_uid": ["ctx_1"],
@@ -300,6 +311,24 @@ CONTRACT: list[dict] = [
         },
     },
     # ---- Memory ----
+    {
+        # /memory/distill is MONOLITHIC — no action field. `output_type`
+        # ("lesson") and `summarizes_uids` asserted for the same reason as
+        # the resolve fields above.
+        "method": "distill",
+        "http_method": "POST",
+        "path": "/memory/distill",
+        "action": None,
+        "required_fields": ["label", "output_type", "summarizes_uids"],
+        "forbidden_fields": ["action"],
+        "positional": [],
+        "args": {
+            "label": "Stage migrations before cutover",
+            "summary": "We learned to stage migrations first.",
+            "output_type": "lesson",
+            "summarizes_uids": ["exec_1"],
+        },
+    },
     {
         "method": "journal",
         "http_method": "POST",

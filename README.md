@@ -183,7 +183,7 @@ See the [Operational Ontology](https://mindgraph.cloud/docs/ontology) and [Conne
 | `ingest_chunk(content, *, chunk_type?, ...)` | Ingest a single text chunk (sync): stores, embeds, and runs LLM extraction |
 | `ingest_document(content, *, title?, ...)` | Ingest a full document (async): chunks text, returns job ID |
 | `ingest_session(content, *, session_uid?, ...)` | Ingest a session transcript (async): links to session, returns job ID |
-| `retrieve_context(query, *, k?, depth?, ...)` | Retrieve semantically matched chunks + connected graph nodes/edges |
+| `retrieve_context(query, *, graph_expansion_limit?, graph_max_depth?, ...)` | Direct retrieval plus optional cheapest-first graph expansion |
 | `get_job(job_id)` | Get async job status and progress |
 | `clear_graph()` | Clear all graph data |
 
@@ -199,7 +199,7 @@ See the [Operational Ontology](https://mindgraph.cloud/docs/ontology) and [Conne
 | Method | Description |
 |--------|-------------|
 | `retrieve(**kwargs)` | Unified retrieval: text search, active goals, open questions, weak claims |
-| `traverse(**kwargs)` | Graph traversal: chain, neighborhood, path, or subgraph |
+| `traverse(**kwargs)` | Budgeted min-cost traversal; response depth is witness-path hops |
 | `evolve(**kwargs)` | Lifecycle mutations: update, tombstone, restore, decay, history |
 
 ### Health & Stats

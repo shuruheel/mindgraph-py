@@ -266,6 +266,27 @@ def test_reasoning_chain_shortcut_uses_start_uid():
     client.close()
 
 
+def test_retrieve_context_forwards_budgeted_expansion_options():
+    cap = Capture()
+    client = make_client(cap, response_json={"graph": {"nodes": [], "edges": []}})
+    client.retrieve_context(
+        "graph retrieval",
+        node_limit=18,
+        graph_expansion_limit=6,
+        graph_max_depth=3,
+        valid_at="2026-07-17",
+    )
+    assert cap.path == "/retrieve/context"
+    assert cap.body == {
+        "query": "graph retrieval",
+        "node_limit": 18,
+        "graph_expansion_limit": 6,
+        "graph_max_depth": 3,
+        "valid_at": "2026-07-17",
+    }
+    client.close()
+
+
 # ---------------------------------------------------------------------------
 # /epistemic/argument is MONOLITHIC: no action; structured claim + evidence
 # (evidence is an ARRAY per the server's ArgumentRequest contract).

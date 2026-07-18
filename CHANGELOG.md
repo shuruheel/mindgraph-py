@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased (1.9 product train)
+
+### Added
+
+- `retrieve_context()` gains `graph_expansion_limit`, `graph_max_depth`, and
+  `valid_at` keyword arguments.
+
+### Changed
+
+- `traverse()` documents the server 1.9 min-cost witness semantics: `depth`,
+  `parent_uid`, `path_cost`, and `path_confidence` refer to the selected
+  cheapest path rather than first-discovery BFS.
+
 ## 0.11.0 (2026-07-07)
 
 ### Added

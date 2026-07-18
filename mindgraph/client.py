@@ -487,10 +487,10 @@ class MindGraph:
 
     def traverse(self, **kwargs: Any) -> Any:
         """POST /traverse. Steps in the response carry ``path_cost`` (sum of
-        -ln(edge weight) along the returned BFS path; lower = stronger) and
+        -ln(edge weight) along the selected cheapest path; lower = stronger) and
         ``path_confidence`` (product of edge confidences; a ranking signal,
-        not a calibrated probability) — scores of the path returned, not the
-        optimal path."""
+        not a calibrated probability). ``depth`` is the hop count of that
+        min-cost witness path, which may exceed the fewest-hop distance."""
         return self._request("POST", "/traverse", kwargs)
 
     def evolve(self, **kwargs: Any) -> Any:
@@ -1081,6 +1081,9 @@ class MindGraph:
         layer: str | None = None,
         include_graph: bool | None = None,
         min_similarity: float | None = None,
+        graph_expansion_limit: int | None = None,
+        graph_max_depth: int | None = None,
+        valid_at: str | None = None,
     ) -> dict[str, Any]:
         """Retrieve context from the knowledge graph.
 
@@ -1109,6 +1112,10 @@ class MindGraph:
             layer: Filter to a specific layer.
             include_graph: Include graph nodes and edges (default True).
             min_similarity: Minimum similarity threshold.
+            graph_expansion_limit: Reserve up to this many node slots for
+                cheapest-first graph expansion (default 0, direct-only).
+            graph_max_depth: Maximum graph-expansion hops (default 2).
+            valid_at: ISO-8601 date used to annotate temporal validity.
         """
         body: dict[str, Any] = {"query": query}
         if node_limit is not None:
@@ -1125,6 +1132,12 @@ class MindGraph:
             body["include_graph"] = include_graph
         if min_similarity is not None:
             body["min_similarity"] = min_similarity
+        if graph_expansion_limit is not None:
+            body["graph_expansion_limit"] = graph_expansion_limit
+        if graph_max_depth is not None:
+            body["graph_max_depth"] = graph_max_depth
+        if valid_at is not None:
+            body["valid_at"] = valid_at
         return self._request("POST", "/retrieve/context", body)
 
     def backfill_node_sources(self) -> dict[str, Any]:
