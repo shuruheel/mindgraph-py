@@ -124,6 +124,7 @@ VALID_ACTIONS: dict[str, set[str]] = {
         "unresolved_contradictions",
         "merge_candidates",
         "curation_counts",
+        "stale_derivations",
         "preferences",
         "layer",
         "recent",
@@ -291,7 +292,12 @@ CONTRACT: list[dict] = [
         "action": "resolve",
         "required_fields": ["action", "decision_uid", "chosen_option_uid"],
         "positional": ["dec_1", "opt_1"],
-        "args": {},
+        "args": {
+            "informs_uid": ["ctx_1"],
+            "as_of_date": "2026-07-17",
+            "session_id": "session_7",
+            "retrieval_trace_id": "trace_7",
+        },
     },
     # ---- Memory ----
     {
@@ -309,6 +315,15 @@ CONTRACT: list[dict] = [
         "http_method": "POST",
         "path": "/retrieve",
         "action": "merge_candidates",
+        "required_fields": ["action"],
+        "positional": [],
+        "args": {},
+    },
+    {
+        "method": "stale_derivations",
+        "http_method": "POST",
+        "path": "/retrieve",
+        "action": "stale_derivations",
         "required_fields": ["action"],
         "positional": [],
         "args": {},

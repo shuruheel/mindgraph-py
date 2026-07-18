@@ -340,6 +340,11 @@ class MindGraph:
         chosen_option_uid: str,
         *,
         summary: str | None = None,
+        props: dict[str, Any] | None = None,
+        informs_uid: list[str] | None = None,
+        as_of_date: str | None = None,
+        session_id: str | None = None,
+        retrieval_trace_id: str | None = None,
         agent_id: str | None = None,
     ) -> dict[str, Any]:
         """Resolve a decision by choosing an option.
@@ -354,6 +359,16 @@ class MindGraph:
         }
         if summary:
             body["summary"] = summary
+        if props:
+            body["props"] = props
+        if informs_uid:
+            body["informs_uid"] = informs_uid
+        if as_of_date:
+            body["as_of_date"] = as_of_date
+        if session_id:
+            body["session_id"] = session_id
+        if retrieval_trace_id:
+            body["retrieval_trace_id"] = retrieval_trace_id
         if agent_id:
             body["agent_id"] = agent_id
         return self._request("POST", "/intent/deliberation", body)
@@ -424,6 +439,16 @@ class MindGraph:
         dedup pipeline's ambiguous zone, awaiting merge/dismiss (server >= 1.3).
         """
         return self._request("POST", "/retrieve", {"action": "merge_candidates"})
+
+    def stale_derivations(
+        self, limit: int = 50, offset: int = 0
+    ) -> list[dict[str, Any]]:
+        """Derived statements awaiting repair after a load-bearing premise changed."""
+        return self._request(
+            "POST",
+            "/retrieve",
+            {"action": "stale_derivations", "limit": limit, "offset": offset},
+        )
 
     def retrieve(self, **kwargs: Any) -> list[dict[str, Any]]:
         """Retrieve nodes by action. Returns a list of results.

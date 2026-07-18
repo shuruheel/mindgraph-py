@@ -124,6 +124,7 @@ def test_retrieve_action_set_is_exact():
         "unresolved_contradictions",
         "merge_candidates",
         "curation_counts",
+        "stale_derivations",
         "preferences",
         "layer",
         "recent",
@@ -288,7 +289,7 @@ def test_argue_is_monolithic_no_action_evidence_array():
 
 # ---------------------------------------------------------------------------
 # The full /retrieve action set is reachable through the raw retrieve() method
-# (the Python RetrieveRequest is untyped **kwargs, so all 13 are accepted).
+# (the Python RetrieveRequest is untyped **kwargs, so all 14 are accepted).
 # ---------------------------------------------------------------------------
 
 

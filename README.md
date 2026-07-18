@@ -86,6 +86,7 @@ entity = graph.find_or_create_entity("Some Entity")
 |--------|-------------|
 | `commit(**kwargs)` | Create a goal, project, or milestone |
 | `deliberate(**kwargs)` | Open decisions, add options/constraints, resolve decisions |
+| `resolve_decision(...)` | Resolve with optional `informs_uid`, `as_of_date`, `session_id`, and `retrieval_trace_id` linkage |
 
 ### Action Layer
 
@@ -100,7 +101,7 @@ entity = graph.find_or_create_entity("Some Entity")
 |--------|-------------|
 | `session(**kwargs)` | Open a session, record traces, or close a session |
 | `journal(label, props?, *, summary?, session_uid?, ...)` | Record a journal entry linked to an optional session |
-| `distill(**kwargs)` | Create a summary that distills multiple source nodes |
+| `distill(**kwargs)` | Create a Summary (default) or Lesson with source provenance (`output_type="lesson"`) |
 | `memory_config(**kwargs)` | Set/get preferences and memory policies |
 
 ### Agent Layer
