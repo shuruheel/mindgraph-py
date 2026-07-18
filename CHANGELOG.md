@@ -1,6 +1,8 @@
 # Changelog
 
-## Unreleased (1.9 product train)
+## Unreleased
+
+## 0.12.0 (2026-07-18)
 
 ### Added
 
