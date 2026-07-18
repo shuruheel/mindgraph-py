@@ -9,6 +9,13 @@
 
 ### Changed
 
+- `resolve_decision()` against server >= 1.9 is replace-semantics: re-resolving
+  tombstones the prior `DecidedOn` edge (exactly one live canonical edge) and
+  the response reports `replaced_decided_on`; invalid decision/option/context
+  UIDs are rejected up front. Merge-candidate rows carry per-side
+  `node_a_truth_status`/`node_b_truth_status`. The offline contract suite now
+  asserts the resolve/distill wire names, so a rename goes red in CI.
+
 - `traverse()` documents the server 1.9 min-cost witness semantics: `depth`,
   `parent_uid`, `path_cost`, and `path_confidence` refer to the selected
   cheapest path rather than first-discovery BFS.
