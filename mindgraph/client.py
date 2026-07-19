@@ -655,6 +655,7 @@ class MindGraph:
     def search(
         self,
         query: str,
+        project_uid: str | None = None,
         node_type: str | None = None,
         layer: str | None = None,
         limit: int | None = None,
@@ -669,6 +670,8 @@ class MindGraph:
         Otherwise a flat list of search results is returned.
         """
         body: dict[str, Any] = {"query": query}
+        if project_uid:
+            body["project_uid"] = project_uid
         if node_type:
             body["node_type"] = node_type
         if layer:
@@ -686,6 +689,7 @@ class MindGraph:
     def hybrid_search(
         self,
         query: str,
+        project_uid: str | None = None,
         k: int | None = None,
         node_types: list[str] | None = None,
         layer: str | None = None,
@@ -700,6 +704,8 @@ class MindGraph:
         Requires server >= 1.2.0; older servers ignore the flag.
         """
         body: dict[str, Any] = {"action": "hybrid", "query": query}
+        if project_uid:
+            body["project_uid"] = project_uid
         if k:
             body["k"] = k
         if node_types:
@@ -949,6 +955,7 @@ class MindGraph:
         content: str,
         *,
         title: str | None = None,
+        project_uid: str | None = None,
         document_type: str | None = None,
         content_type: str | None = None,
         source_uri: str | None = None,
@@ -978,6 +985,8 @@ class MindGraph:
         body: dict[str, Any] = {"content": content}
         if title:
             body["title"] = title
+        if project_uid:
+            body["project_uid"] = project_uid
         if document_type:
             body["document_type"] = document_type
         if content_type:
@@ -1074,6 +1083,7 @@ class MindGraph:
         self,
         query: str,
         *,
+        project_uid: str | None = None,
         node_limit: int | None = None,
         article_limit: int | None = None,
         chunk_limit: int | None = None,
@@ -1105,6 +1115,7 @@ class MindGraph:
 
         Args:
             query: Natural language search query.
+            project_uid: Corpus Project whose member sources define retrieval.
             node_limit: Max graph nodes (default 10).
             article_limit: Max wiki articles (default 3). Set 0 to skip.
             chunk_limit: Max raw chunks (default 0). Set >0 to include source text.
@@ -1118,6 +1129,8 @@ class MindGraph:
             valid_at: ISO-8601 date used to annotate temporal validity.
         """
         body: dict[str, Any] = {"query": query}
+        if project_uid:
+            body["project_uid"] = project_uid
         if node_limit is not None:
             body["node_limit"] = node_limit
         if article_limit is not None:

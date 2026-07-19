@@ -287,6 +287,33 @@ def test_retrieve_context_forwards_budgeted_expansion_options():
     client.close()
 
 
+@pytest.mark.parametrize(
+    ("method", "expected_path"),
+    [
+        (lambda client: client.search("scope", project_uid="project-1"), "/search"),
+        (
+            lambda client: client.hybrid_search("scope", project_uid="project-1"),
+            "/retrieve",
+        ),
+        (
+            lambda client: client.ingest_document("scope", project_uid="project-1"),
+            "/ingest/document",
+        ),
+        (
+            lambda client: client.retrieve_context("scope", project_uid="project-1"),
+            "/retrieve/context",
+        ),
+    ],
+)
+def test_project_uid_wire_contract(method, expected_path):
+    cap = Capture()
+    client = make_client(cap, response_json=[])
+    method(client)
+    assert cap.path == expected_path
+    assert cap.body["project_uid"] == "project-1"
+    client.close()
+
+
 # ---------------------------------------------------------------------------
 # /epistemic/argument is MONOLITHIC: no action; structured claim + evidence
 # (evidence is an ARRAY per the server's ArgumentRequest contract).
