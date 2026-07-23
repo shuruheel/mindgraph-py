@@ -2,6 +2,23 @@
 
 ## Unreleased
 
+## 0.13.0 (2026-07-23)
+
+### Added
+
+- **Project scope on corpus calls.** `search()`, `hybrid_search()`,
+  `ingest_document()`, and `retrieve_context()` accept a `project_uid` keyword,
+  confining the call to one project's admitted sources (server >= 1.10.0).
+  `project_uid` is **keyword-only** on every one of them, so existing positional
+  calls such as `search("q", "Claim")` keep binding `"Claim"` to `node_type`.
+
+### Note
+
+- The structured ontology query surface added to the TypeScript SDK in 0.13.0
+  (`/ontology/query/structured`, schema manifests, generated tool descriptors) is
+  not yet exposed here. Untyped access via the existing request helpers continues
+  to work.
+
 ## 0.12.0 (2026-07-18)
 
 ### Added

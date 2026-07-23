@@ -655,13 +655,14 @@ class MindGraph:
     def search(
         self,
         query: str,
-        project_uid: str | None = None,
         node_type: str | None = None,
         layer: str | None = None,
         limit: int | None = None,
         min_score: float | None = None,
         include_edges: bool = False,
         include_chunks: bool = False,
+        *,
+        project_uid: str | None = None,
     ) -> list[dict[str, Any]] | dict[str, Any]:
         """Full-text search over nodes.
 
@@ -689,11 +690,12 @@ class MindGraph:
     def hybrid_search(
         self,
         query: str,
-        project_uid: str | None = None,
         k: int | None = None,
         node_types: list[str] | None = None,
         layer: str | None = None,
         explain: bool = False,
+        *,
+        project_uid: str | None = None,
     ) -> list[dict[str, Any]]:
         """Hybrid BM25 + vector search with reciprocal rank fusion.
 
