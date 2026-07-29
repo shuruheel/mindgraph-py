@@ -16,4 +16,4 @@ dependencies = ["httpx>=0.25"]
 packages = ["mindgraph"]
 
 [project.optional-dependencies]
-dev = ["pytest", "pytest-asyncio", "ruff"]
+dev = ["pytest", "pytest-asyncio", "ruff==0.15.*"]
