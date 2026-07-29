@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.14.0 (2026-07-29)
+
+Python parity with the TS SDK 0.14.0 coding-agent work surface. Same
+compatibility note: the work composites and identity actions require a server
+newer than mindgraph 1.10.0 (local build of `mindgraph-server` from main until
+the next cloud deploy).
+
+### Added
+
+- Durable-work composites forwarded through `plan(**kwargs)` (`resume_work`,
+  `claim_task`, `heartbeat`, `start_iteration`, `checkpoint_iteration`,
+  `block_task`, `complete_task`, `abandon_iteration` with fencing fields).
+- External identity on `entity(**kwargs)` (`identity`, `identity_space_uid`,
+  `resolve_identity`).
+- `memory_sync(**kwargs)` for the memory-file sync surface.
+
 ## 0.13.0 (2026-07-23)
 
 ### Added
