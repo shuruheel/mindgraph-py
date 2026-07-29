@@ -421,6 +421,9 @@ class MindGraph:
     def memory_config(self, **kwargs: Any) -> Any:
         return self._request("POST", "/memory/config", kwargs)
 
+    def memory_sync(self, **kwargs: Any) -> Any:
+        return self._request("POST", "/memory/sync", kwargs)
+
     # ---- Agent Layer ----
 
     def plan(self, **kwargs: Any) -> Any:
