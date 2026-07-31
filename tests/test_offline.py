@@ -484,3 +484,47 @@ def test_known_divergences_documented():
     """Guard: the allowlist stays populated so divergences remain visible."""
     assert len(KNOWN_DIVERGENCES) == 5
     assert all(d.startswith("R4#") for d in KNOWN_DIVERGENCES)
+
+
+class TestRetryAfterHonored:
+    """B3 client-compat: a 503 with Retry-After uses the server's hint."""
+
+    def _client_with_responses(self, responses: list[httpx.Response]) -> tuple[MindGraph, list[float]]:
+        calls: list[float] = []
+        it = iter(responses)
+
+        def handler(request: httpx.Request) -> httpx.Response:
+            calls.append(0.0)  # placeholder; sleep is patched, timing asserted via patch
+            return next(it)
+
+        mg = MindGraph(base_url=BASE_URL, api_key="mg_test")
+        mg._client._transport = httpx.MockTransport(handler)
+        return mg, calls
+
+    def test_retry_after_overrides_backoff(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        sleeps: list[float] = []
+        monkeypatch.setattr("mindgraph.client.time.sleep", sleeps.append)
+        mg, _ = self._client_with_responses(
+            [
+                httpx.Response(503, text="busy", headers={"Retry-After": "2"}),
+                httpx.Response(200, json={"ok": True}),
+            ]
+        )
+        assert mg.health() == {"ok": True}
+        assert sleeps == [2.0]
+
+    def test_hostile_retry_after_is_capped_and_absence_keeps_backoff(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        sleeps: list[float] = []
+        monkeypatch.setattr("mindgraph.client.time.sleep", sleeps.append)
+        mg, _ = self._client_with_responses(
+            [
+                httpx.Response(503, text="busy", headers={"Retry-After": "86400"}),
+                httpx.Response(503, text="busy"),
+                httpx.Response(200, json={"ok": True}),
+            ]
+        )
+        assert mg.health() == {"ok": True}
+        assert sleeps[0] == 10.0  # hostile header capped
+        assert sleeps[1] > 0  # legacy server: default backoff path retained
