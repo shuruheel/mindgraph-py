@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Changed
+- 503 retries honor a positive `Retry-After` delta-seconds header (capped at
+  10 s), falling back to the existing exponential backoff when absent. Client
+  prerequisite for MindGraph Cloud's tenant-pool admission control — this
+  change must be published before that server feature deploys.
+
 ## 0.14.0 (2026-07-29)
 
 Python parity with the TS SDK 0.14.0 coding-agent work surface. Same
