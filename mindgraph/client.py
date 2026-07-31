@@ -68,10 +68,25 @@ class MindGraph:
                     resp.status_code,
                     body,
                 )
-                # Retry on 503 (server warming up) with exponential backoff
+                # Retry on 503 (server warming up or tenant pool at capacity).
+                # When the server sends Retry-After (delta-seconds), honor it —
+                # the cloud's admission control sizes that hint so the total
+                # client wait stays bounded; blind exponential backoff on top
+                # of a server-side wait once composed into ~47 s worst-case
+                # hangs. Capped at 10 s per attempt so a malformed or hostile
+                # header cannot park the client.
                 if resp.status_code == 503 and attempt < self._max_retries:
                     last_error = err
-                    time.sleep(self._retry_backoff * (2**attempt))
+                    delay = self._retry_backoff * (2**attempt)
+                    retry_after = resp.headers.get("retry-after")
+                    if retry_after is not None:
+                        try:
+                            hinted = float(retry_after)
+                            if hinted > 0:
+                                delay = min(hinted, 10.0)
+                        except ValueError:
+                            pass
+                    time.sleep(delay)
                     continue
                 raise err
             if not resp.content:
