@@ -124,6 +124,138 @@ class MindGraph:
     def entity(self, **kwargs: Any) -> Any:
         return self._request("POST", "/reality/entity", kwargs)
 
+    def series(self, **kwargs: Any) -> Any:
+        """Call the action-dispatch time-series endpoint directly."""
+        return self._request("POST", "/reality/series", kwargs)
+
+    def create_series(
+        self,
+        entity_uid: str,
+        name: str,
+        temporality: str,
+        *,
+        description: str | None = None,
+        unit: str | None = None,
+        period_unit: str | None = None,
+        fiscal_year_end: dict[str, int] | None = None,
+        value_kind: str | None = None,
+        default_source_uid: str | None = None,
+        origin: str | None = None,
+        space_uid: str | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "create",
+            "entity_uid": entity_uid,
+            "name": name,
+            "temporality": temporality,
+        }
+        optional = {
+            "description": description,
+            "unit": unit,
+            "period_unit": period_unit,
+            "fiscal_year_end": fiscal_year_end,
+            "value_kind": value_kind,
+            "default_source_uid": default_source_uid,
+            "origin": origin,
+            "space_uid": space_uid,
+            "agent_id": agent_id,
+        }
+        body.update(
+            {key: value for key, value in optional.items() if value is not None}
+        )
+        return self._request("POST", "/reality/series", body)
+
+    def append_series(
+        self,
+        series_uid: str,
+        points: list[dict[str, Any]],
+        *,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "append",
+            "series_uid": series_uid,
+            "points": points,
+        }
+        if agent_id is not None:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/reality/series", body)
+
+    def series_window(
+        self,
+        series_uid: str,
+        from_: int,
+        to: int,
+        *,
+        cursor: int | None = None,
+        limit: int | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "window",
+            "series_uid": series_uid,
+            "from": from_,
+            "to": to,
+        }
+        if cursor is not None:
+            body["cursor"] = cursor
+        if limit is not None:
+            body["limit"] = limit
+        return self._request("POST", "/reality/series", body)
+
+    def aggregate_series(
+        self,
+        series_uid: str,
+        from_: int,
+        to: int,
+        bucket: str,
+        agg: str,
+        *,
+        fill: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "aggregate",
+            "series_uid": series_uid,
+            "from": from_,
+            "to": to,
+            "bucket": bucket,
+            "agg": agg,
+        }
+        if fill is not None:
+            body["fill"] = fill
+        return self._request("POST", "/reality/series", body)
+
+    def latest_series(self, series_uid: str) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/reality/series",
+            {"action": "latest", "series_uid": series_uid},
+        )
+
+    def list_series_for_entity(self, entity_uid: str) -> dict[str, Any]:
+        return self._request(
+            "POST",
+            "/reality/series",
+            {"action": "list_for_entity", "entity_uid": entity_uid},
+        )
+
+    def delete_series(
+        self,
+        series_uid: str,
+        *,
+        reason: str | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "delete_series",
+            "series_uid": series_uid,
+        }
+        if reason is not None:
+            body["reason"] = reason
+        if agent_id is not None:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/reality/series", body)
+
     def find_or_create_entity(
         self,
         label: str,
@@ -1331,8 +1463,44 @@ class MindGraph:
         return self._request("GET", "/v1/ontology/schemas")
 
     def get_ontology_schema(self, schema_id: str) -> dict[str, Any]:
-        """Get one schema with its object types + relation types."""
+        """Get one schema with object, relation, and Series bindings."""
         return self._request("GET", f"/v1/ontology/schemas/{schema_id}")
+
+    def create_ontology_series_binding(
+        self, schema_id: str, **binding: Any
+    ) -> dict[str, Any]:
+        """Create a schema-level SQL binding for dense measurements."""
+        from urllib.parse import quote
+
+        return self._request(
+            "POST",
+            f"/v1/ontology/schemas/{quote(schema_id, safe='')}/series-bindings",
+            binding,
+        )
+
+    def sync_ontology_series_binding(
+        self, binding_id: str, mode: str = "incremental"
+    ) -> dict[str, Any]:
+        """Start an unmetered connector Series synchronization job."""
+        from urllib.parse import quote
+
+        return self._request(
+            "POST",
+            f"/v1/ontology/series-bindings/{quote(binding_id, safe='')}/sync",
+            {"mode": mode},
+        )
+
+    def archive_ontology_series_binding(
+        self, schema_id: str, binding_id: str
+    ) -> None:
+        """Archive a schema-level Series binding."""
+        from urllib.parse import quote
+
+        self._request(
+            "DELETE",
+            f"/v1/ontology/schemas/{quote(schema_id, safe='')}/series-bindings/"
+            f"{quote(binding_id, safe='')}",
+        )
 
     def create_ontology_schema(
         self, *, name: str, description: str | None = None
