@@ -106,6 +106,42 @@ def test_ontology_review_filters_and_schema_actions_are_exposed():
     client.close()
 
 
+def test_series_binding_routes_are_exposed_and_path_safe():
+    cap = Capture()
+    client = make_client(cap, response_json={"sync_job_id": "job-1"})
+    client.create_ontology_series_binding(
+        "schema/1",
+        name="Revenue",
+        entity_type="Company",
+        temporality="period",
+        period_unit="quarter",
+        backing={
+            "connection_ref": "connection-1",
+            "table": "facts.revenue",
+            "entity_key_column": "company_id",
+            "time_column": "period_end",
+            "value_column": "value",
+        },
+    )
+    assert cap.method == "POST"
+    assert cap.request is not None
+    assert cap.request.url.raw_path.decode() == "/v1/ontology/schemas/schema%2F1/series-bindings"
+
+    client.sync_ontology_series_binding("binding/1", "full")
+    assert cap.method == "POST"
+    assert cap.request is not None
+    assert cap.request.url.raw_path.decode() == "/v1/ontology/series-bindings/binding%2F1/sync"
+
+    client.archive_ontology_series_binding("schema/1", "binding/1")
+    assert cap.method == "DELETE"
+    assert cap.request is not None
+    assert (
+        cap.request.url.raw_path.decode()
+        == "/v1/ontology/schemas/schema%2F1/series-bindings/binding%2F1"
+    )
+    client.close()
+
+
 # ---------------------------------------------------------------------------
 # Sanity: the fixture itself is internally consistent.
 # ---------------------------------------------------------------------------

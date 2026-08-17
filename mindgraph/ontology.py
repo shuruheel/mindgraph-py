@@ -319,6 +319,38 @@ class OntologyRelationType(TypedDict):
 class OntologySchemaDetail(OntologySchema):
     object_types: list[OntologyObjectType]
     relation_types: list[OntologyRelationType]
+    series_bindings: list["OntologySeriesBinding"]
+
+
+class SeriesBacking(TypedDict, total=False):
+    connection_ref: str
+    table: str
+    entity_key_column: str
+    time_column: str
+    value_column: str
+    filter: dict[str, Any]
+    cursor_column: str
+
+
+class OntologySeriesBinding(TypedDict, total=False):
+    id: str
+    schema_id: str
+    org_id: str
+    name: str
+    entity_type: str
+    unit: Optional[str]
+    temporality: Literal["instant", "period"]
+    period_unit: Optional[Literal["year", "half", "quarter", "month", "week", "day"]]
+    fiscal_year_end: dict[str, int]
+    backing: SeriesBacking
+    cursor_value: Optional[str]
+    last_domain_time: Optional[str]
+    reconcile_periods: int
+    last_source_keys: list[str]
+    last_reconciliation: Optional[dict[str, Any]]
+    status: Literal["active", "archived"]
+    created_at: str
+    updated_at: str
 
 
 class CreateOntologySchemaRequestRequired(TypedDict):
