@@ -3,9 +3,21 @@
 from __future__ import annotations
 
 import time
-from typing import Any
+from typing import Any, Literal, TypedDict, overload
 
 import httpx
+
+
+class _RequiredSkillDistillProps(TypedDict):
+    name: str
+    description: str
+    content: str
+
+
+class SkillDistillProps(_RequiredSkillDistillProps, total=False):
+    """Caller-authored content for a governed skill candidate."""
+
+    license: str
 
 
 class MindGraphError(Exception):
@@ -619,6 +631,44 @@ class MindGraph:
         if agent_id:
             body["agent_id"] = agent_id
         return self._request("POST", "/memory/session", body)
+
+    @overload
+    def distill(
+        self,
+        *,
+        label: str,
+        output_type: Literal["skill"],
+        props: SkillDistillProps,
+        summary: str | None = None,
+        confidence: float | None = None,
+        salience: float | None = None,
+        summarizes_uids: list[str] | None = None,
+        session_uid: str | None = None,
+        work_uid: str | None = None,
+        execution_uid: str | None = None,
+        idempotency_key: str | None = None,
+        supersedes_uid: str | None = None,
+        agent_id: str | None = None,
+    ) -> Any: ...
+
+    @overload
+    def distill(
+        self,
+        *,
+        label: str,
+        output_type: Literal["summary", "lesson"] = "summary",
+        summary: str | None = None,
+        confidence: float | None = None,
+        salience: float | None = None,
+        summarizes_uids: list[str] | None = None,
+        session_uid: str | None = None,
+        work_uid: str | None = None,
+        execution_uid: str | None = None,
+        idempotency_key: str | None = None,
+        supersedes_uid: str | None = None,
+        props: dict[str, Any] | None = None,
+        agent_id: str | None = None,
+    ) -> Any: ...
 
     def distill(self, **kwargs: Any) -> Any:
         return self._request("POST", "/memory/distill", kwargs)

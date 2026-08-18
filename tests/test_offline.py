@@ -83,6 +83,42 @@ def make_client(capture: Capture, response_json: Any = None) -> MindGraph:
     return client
 
 
+def test_skill_distill_sends_typed_props_and_provenance_unchanged():
+    cap = Capture()
+    client = make_client(cap, response_json={"uid": "skill-1", "status": "candidate"})
+
+    client.distill(
+        label="Capture parser recovery",
+        output_type="skill",
+        summary="Reusable parser recovery procedure",
+        session_uid="session-1",
+        summarizes_uids=["project-1"],
+        props={
+            "name": "parser-recovery",
+            "description": "Recover a parser after malformed input.",
+            "content": "# Parser recovery\n\nNormalize input, then retry.",
+            "license": "MIT",
+        },
+    )
+
+    assert cap.method == "POST"
+    assert cap.path == "/memory/distill"
+    assert cap.body == {
+        "label": "Capture parser recovery",
+        "output_type": "skill",
+        "summary": "Reusable parser recovery procedure",
+        "session_uid": "session-1",
+        "summarizes_uids": ["project-1"],
+        "props": {
+            "name": "parser-recovery",
+            "description": "Recover a parser after malformed input.",
+            "content": "# Parser recovery\n\nNormalize input, then retry.",
+            "license": "MIT",
+        },
+    }
+    client.close()
+
+
 def test_ontology_review_filters_and_schema_actions_are_exposed():
     cap = Capture()
     client = make_client(cap, response_json={"items": [], "limit": 50, "offset": 0})

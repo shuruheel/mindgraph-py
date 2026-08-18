@@ -1,4 +1,4 @@
-from .client import MindGraph, MindGraphError
+from .client import MindGraph, MindGraphError, SkillDistillProps
 from .ontology import (
     CanonicalAttachmentAuthority,
     CanonicalAttachmentBinding,
@@ -47,6 +47,7 @@ from .ontology import (
 __all__ = [
     "MindGraph",
     "MindGraphError",
+    "SkillDistillProps",
     "CanonicalAttachmentAuthority",
     "CanonicalAttachmentBinding",
     "CanonicalAttachmentDirection",

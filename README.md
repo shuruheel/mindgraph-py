@@ -101,7 +101,7 @@ entity = graph.find_or_create_entity("Some Entity")
 |--------|-------------|
 | `session(**kwargs)` | Open a session, record traces, or close a session |
 | `journal(label, props?, *, summary?, session_uid?, ...)` | Record a journal entry linked to an optional session |
-| `distill(**kwargs)` | Create a Summary (default) or Lesson with source provenance (`output_type="lesson"`) |
+| `distill(**kwargs)` | Create a Summary, Lesson, or governed Skill candidate with source provenance |
 | `memory_config(**kwargs)` | Set/get preferences and memory policies |
 
 ### Agent Layer
