@@ -50,6 +50,10 @@ Supports context manager protocol (`with` statement) for automatic cleanup.
 |--------|-------------|
 | `capture(**kwargs)` | Capture a source, snippet, or observation |
 | `entity(**kwargs)` | Create, alias, resolve, or merge entities |
+| `series(**kwargs)` | Call the time-series action surface directly |
+| `create_series` / `append_series` / `series_window` | Create a Series, append sourced points, and page through a bounded time window |
+| `aggregate_series` / `latest_series` / `list_series_for_entity` | Read bounded aggregates, cached latest values, and an entity's Series |
+| `batch_latest_series` / `batch_aggregate_series` / `delete_series` | Compare Series across entities or tombstone a Series and its points |
 | `find_or_create_entity(label, props?, agent_id?)` | Convenience: create or find an entity by label (generic fallback) |
 | `find_or_create_person(label, props?, agent_id?)` | Find or create a Person entity |
 | `find_or_create_organization(label, props?, agent_id?)` | Find or create an Organization entity |
@@ -104,6 +108,22 @@ entity = graph.find_or_create_entity("Some Entity")
 | `distill(**kwargs)` | Create a Summary, Lesson, or governed Skill candidate with source provenance |
 | `memory_config(**kwargs)` | Set/get preferences and memory policies |
 
+`output_type="skill"` requires caller-authored SKILL.md content and at
+least one provenance field. It always creates a candidate for review:
+
+```python
+graph.distill(
+    label="Recover a malformed import",
+    output_type="skill",
+    work_uid="work_import_42",
+    props={
+        "name": "recover-malformed-import",
+        "description": "Use after a spreadsheet import fails schema validation.",
+        "content": "# Recovery\n\nValidate headers, normalize dates, then retry.",
+    },
+)
+```
+
 ### Agent Layer
 
 | Method | Description |
@@ -137,6 +157,7 @@ Define typed domain objects (Customer, Order, Contract…) as a semantic contrac
 |--------|-------------|
 | `propose_ontology_schema(...)` | Draft a schema from a description (+ optional sample docs); returns `{"schema_id", "job_id"}` |
 | `activate_ontology_schema(id)` / `get_ontology_schema(id)` / `list_ontology_schemas()` | Schema lifecycle |
+| `create_ontology_series_binding` / `sync_ontology_series_binding` / `archive_ontology_series_binding` | Manage SQL-backed dense-measurement bindings |
 | `list_ontology_proposals(...)` / `approve_ontology_proposal(id)` / `reject_ontology_proposal(id)` | Review extracted-object proposals |
 | `query_ontology(query=..., schema_id=...)` | Typed retrieval with the cognitive overlay fused in |
 | `list_ontology_tools()` | The generated read-tool manifest (`search_/get_/summarize_<obj>`) the MCP server renders |
