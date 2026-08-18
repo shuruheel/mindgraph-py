@@ -1849,14 +1849,67 @@ class MindGraph:
         body.update(kwargs)
         return self._request("POST", "/ontology/query", body)
 
-    def get_domain_object(self, uid: str) -> dict[str, Any]:
-        return self._request("GET", f"/ontology/object/{uid}")
+    def query_domain_structured(self, request: dict[str, Any]) -> dict[str, Any]:
+        """Run a closed, schema-validated structured ontology query.
 
-    def get_domain_object_context(self, uid: str, *, depth: int = 2) -> dict[str, Any]:
-        return self._request("GET", f"/ontology/object/{uid}/context?depth={depth}")
+        Supports relation paths, field predicates, provenance, and deterministic
+        aggregates such as ``weighted_scorecard``.
+        """
+        return self._request("POST", "/ontology/query/structured", request)
+
+    def get_domain_object(
+        self,
+        uid: str,
+        *,
+        schema_id: str | None = None,
+        object_type: str | None = None,
+        project_uid: str | None = None,
+    ) -> dict[str, Any]:
+        from urllib.parse import quote, urlencode
+
+        params = {
+            key: value
+            for key, value in {
+                "schema_id": schema_id,
+                "object_type": object_type,
+                "project_uid": project_uid,
+            }.items()
+            if value is not None
+        }
+        suffix = f"?{urlencode(params)}" if params else ""
+        return self._request(
+            "GET", f"/ontology/object/{quote(uid, safe='')}{suffix}"
+        )
+
+    def get_domain_object_context(
+        self,
+        uid: str,
+        *,
+        depth: int = 2,
+        schema_id: str | None = None,
+        object_type: str | None = None,
+        project_uid: str | None = None,
+    ) -> dict[str, Any]:
+        from urllib.parse import quote, urlencode
+
+        params: dict[str, str | int] = {"depth": depth}
+        if schema_id is not None:
+            params["schema_id"] = schema_id
+        if object_type is not None:
+            params["object_type"] = object_type
+        if project_uid is not None:
+            params["project_uid"] = project_uid
+        return self._request(
+            "GET",
+            f"/ontology/object/{quote(uid, safe='')}/context?{urlencode(params)}",
+        )
 
     def get_domain_object_history(self, uid: str) -> dict[str, Any]:
-        return self._request("GET", f"/ontology/object/{uid}/history")
+        from urllib.parse import quote
+
+        return self._request(
+            "GET", f"/ontology/object/{quote(uid, safe='')}/history"
+        )
 
     def list_domain_objects(
         self,
@@ -1930,8 +1983,9 @@ class MindGraph:
 
         Returns ``{"uid": ..., "proposal_id": ...}``. Raises on 409 if an
         object of the same type + canonical_name already exists, unless
-        ``allow_duplicate=True`` is passed. Extra kwargs (``fields``,
-        ``aliases``, ``identity``, ``confidence``) pass through.
+        ``allow_duplicate=True`` is passed. The schema identity key remains
+        enforced. Extra kwargs (``fields``, ``aliases``, ``identity``,
+        ``confidence``) pass through.
         """
         body: dict[str, Any] = {
             "schema_id": schema_id,
@@ -1940,6 +1994,44 @@ class MindGraph:
         }
         body.update(kwargs)
         return self._request("POST", "/v1/ontology/objects", body)
+
+    def update_domain_object(
+        self,
+        uid: str,
+        *,
+        expected_version: int,
+        reason: str,
+        canonical_name: str | None = None,
+        fields: dict[str, Any] | None = None,
+        unset_fields: list[str] | None = None,
+        aliases: list[str] | None = None,
+        confidence: float | None = None,
+    ) -> dict[str, Any]:
+        """Schema-validated authored update with optimistic concurrency.
+
+        Identity fields are immutable. ``fields`` is a patch; use
+        ``unset_fields`` to remove optional values. ``reason`` is retained in
+        the ontology proposal audit ledger.
+        """
+        from urllib.parse import quote
+
+        body: dict[str, Any] = {
+            "expected_version": expected_version,
+            "reason": reason,
+        }
+        if canonical_name is not None:
+            body["canonical_name"] = canonical_name
+        if fields is not None:
+            body["fields"] = fields
+        if unset_fields is not None:
+            body["unset_fields"] = unset_fields
+        if aliases is not None:
+            body["aliases"] = aliases
+        if confidence is not None:
+            body["confidence"] = confidence
+        return self._request(
+            "PATCH", f"/v1/ontology/objects/{quote(uid, safe='')}", body
+        )
 
     # ---- Extraction ----
 
