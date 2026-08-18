@@ -2,7 +2,27 @@
 
 ## Unreleased
 
+## 0.15.0 (2026-08-17)
+
+Python parity for MindGraph Cloud's dense time-series and governed
+skill-capture surfaces. The new methods require a server that implements
+`/reality/series`, ontology Series bindings, and `output_type="skill"`
+on `/memory/distill`; existing methods remain backward compatible.
+
+### Added
+
+- **Time-series methods** for create, append, bounded keyset windows,
+  aggregation, latest values, entity discovery, batch latest/aggregate, and
+  deletion.
+- **Ontology Series bindings** with typed backing metadata plus create, sync,
+  inspect, and archive methods for SQL-backed measurements.
+- **Governed skill distillation** through the exported
+  `SkillDistillProps` type and overloads that distinguish skill candidates
+  from Summary/Lesson requests. Skill distillation creates a review candidate;
+  it never publishes directly.
+
 ### Changed
+
 - 503 retries honor a positive `Retry-After` delta-seconds header (capped at
   10 s), falling back to the existing exponential backoff when absent. Client
   prerequisite for MindGraph Cloud's tenant-pool admission control — this
