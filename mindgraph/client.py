@@ -190,6 +190,7 @@ class MindGraph:
         *,
         cursor: int | None = None,
         limit: int | None = None,
+        project_uid: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {
             "action": "window",
@@ -201,6 +202,8 @@ class MindGraph:
             body["cursor"] = cursor
         if limit is not None:
             body["limit"] = limit
+        if project_uid is not None:
+            body["project_uid"] = project_uid
         return self._request("POST", "/reality/series", body)
 
     def aggregate_series(
@@ -212,6 +215,7 @@ class MindGraph:
         agg: str,
         *,
         fill: str | None = None,
+        project_uid: str | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {
             "action": "aggregate",
@@ -223,21 +227,75 @@ class MindGraph:
         }
         if fill is not None:
             body["fill"] = fill
+        if project_uid is not None:
+            body["project_uid"] = project_uid
         return self._request("POST", "/reality/series", body)
 
-    def latest_series(self, series_uid: str) -> dict[str, Any]:
+    def latest_series(
+        self, series_uid: str, *, project_uid: str | None = None
+    ) -> dict[str, Any]:
+        body = {"action": "latest", "series_uid": series_uid}
+        if project_uid is not None:
+            body["project_uid"] = project_uid
         return self._request(
             "POST",
             "/reality/series",
-            {"action": "latest", "series_uid": series_uid},
+            body,
         )
 
-    def list_series_for_entity(self, entity_uid: str) -> dict[str, Any]:
+    def list_series_for_entity(
+        self, entity_uid: str, *, project_uid: str | None = None
+    ) -> dict[str, Any]:
+        body = {"action": "list_for_entity", "entity_uid": entity_uid}
+        if project_uid is not None:
+            body["project_uid"] = project_uid
         return self._request(
             "POST",
             "/reality/series",
-            {"action": "list_for_entity", "entity_uid": entity_uid},
+            body,
         )
+
+    def batch_latest_series(
+        self,
+        entity_uids: list[str],
+        *,
+        series_names: list[str] | None = None,
+        project_uid: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "batch_latest",
+            "entity_uids": entity_uids,
+        }
+        if series_names is not None:
+            body["series_names"] = series_names
+        if project_uid is not None:
+            body["project_uid"] = project_uid
+        return self._request("POST", "/reality/series", body)
+
+    def batch_aggregate_series(
+        self,
+        series_uids: list[str],
+        from_: int,
+        to: int,
+        bucket: str,
+        agg: str,
+        *,
+        fill: str | None = None,
+        project_uid: str | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "action": "batch_aggregate",
+            "series_uids": series_uids,
+            "from": from_,
+            "to": to,
+            "bucket": bucket,
+            "agg": agg,
+        }
+        if fill is not None:
+            body["fill"] = fill
+        if project_uid is not None:
+            body["project_uid"] = project_uid
+        return self._request("POST", "/reality/series", body)
 
     def delete_series(
         self,
