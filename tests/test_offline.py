@@ -142,6 +142,83 @@ def test_ontology_review_filters_and_schema_actions_are_exposed():
     client.close()
 
 
+def test_authored_domain_object_create_and_update_contract():
+    cap = Capture()
+    client = make_client(
+        cap, response_json={"uid": "lead-1", "proposal_id": "proposal-1", "version": 3}
+    )
+    client.create_domain_object(
+        schema_id="schema-a",
+        object_type="InvestmentLead",
+        canonical_name="Acme — Series A",
+        fields={"deal_id": "deal-1", "stage": "screening"},
+    )
+    assert cap.method == "POST"
+    assert cap.path == "/v1/ontology/objects"
+    assert cap.body["fields"] == {"deal_id": "deal-1", "stage": "screening"}
+
+    client.update_domain_object(
+        "lead/1",
+        fields={"stage": "diligence", "team_score": 8},
+        unset_fields=["risk_score"],
+        expected_version=2,
+        reason="Partner meeting completed",
+    )
+    assert cap.method == "PATCH"
+    assert cap.request is not None
+    assert cap.request.url.raw_path.decode() == "/v1/ontology/objects/lead%2F1"
+    assert cap.body == {
+        "fields": {"stage": "diligence", "team_score": 8},
+        "unset_fields": ["risk_score"],
+        "expected_version": 2,
+        "reason": "Partner meeting completed",
+    }
+    client.close()
+
+
+def test_structured_scorecard_and_bound_object_reads_are_exposed():
+    cap = Capture()
+    client = make_client(cap, response_json={"rows": [], "aggregate": {"ranking": []}})
+    request = {
+        "schema_id": "schema-a",
+        "select": "InvestmentLead",
+        "aggregate": {
+            "op": "weighted_scorecard",
+            "criteria": [
+                {
+                    "field": "team_score",
+                    "weight": 2,
+                    "direction": "higher_is_better",
+                },
+                {
+                    "field": "risk_score",
+                    "weight": 1,
+                    "direction": "lower_is_better",
+                },
+            ],
+            "missing": "exclude_candidate",
+        },
+    }
+    client.query_domain_structured(request)
+    assert cap.method == "POST"
+    assert cap.path == "/ontology/query/structured"
+    assert cap.body == request
+
+    client.get_domain_object(
+        "lead/1",
+        schema_id="schema/a",
+        object_type="InvestmentLead",
+        project_uid="project 1",
+    )
+    assert cap.method == "GET"
+    assert cap.request is not None
+    assert cap.request.url.raw_path.decode().startswith("/ontology/object/lead%2F1?")
+    assert cap.request.url.params["schema_id"] == "schema/a"
+    assert cap.request.url.params["object_type"] == "InvestmentLead"
+    assert cap.request.url.params["project_uid"] == "project 1"
+    client.close()
+
+
 def test_series_binding_routes_are_exposed_and_path_safe():
     cap = Capture()
     client = make_client(cap, response_json={"sync_job_id": "job-1"})
