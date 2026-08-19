@@ -2,6 +2,22 @@
 
 ## Unreleased
 
+## 0.15.1 (2026-08-19)
+
+Patch release for the authored ontology-object contract used by the investment
+deal-flow workflow. These methods require the corresponding MindGraph Cloud
+ontology mutation and weighted-scorecard endpoints; existing methods remain
+backward compatible.
+
+### Added
+
+- `update_domain_object(...)` for schema-validated authored updates with
+  optimistic concurrency, explicit unset semantics, and an audit reason.
+- `query_domain_structured(...)`, including deterministic
+  `weighted_scorecard` aggregates.
+- Schema-bound and path-safe domain-object/context reads for generated deal-flow
+  tools.
+
 ## 0.15.0 (2026-08-17)
 
 Python parity for MindGraph Cloud's dense time-series and governed
