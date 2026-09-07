@@ -2,10 +2,14 @@
 
 from __future__ import annotations
 
+import math
 import time
+from copy import deepcopy
 from typing import Any, Literal, TypedDict, overload
 
 import httpx
+
+from ._retry import TERMINAL_CODES, can_retry_request, retry_delay
 
 
 class _RequiredSkillDistillProps(TypedDict):
@@ -25,6 +29,11 @@ class MindGraphError(Exception):
         super().__init__(message)
         self.status = status
         self.body = body
+        fields = body if isinstance(body, dict) else {}
+        self.code: str | None = fields.get("code") if isinstance(fields.get("code"), str) else None
+        self.retriable: bool | None = (
+            fields.get("retriable") if isinstance(fields.get("retriable"), bool) else None
+        )
 
 
 class MindGraph:
@@ -44,6 +53,10 @@ class MindGraph:
         self.base_url = base_url.rstrip("/")
         self._max_retries = max_retries
         self._retry_backoff = retry_backoff
+        if isinstance(max_retries, bool) or not isinstance(max_retries, int) or max_retries < 0:
+            raise ValueError("max_retries must be a non-negative integer")
+        if not math.isfinite(retry_backoff) or retry_backoff < 0:
+            raise ValueError("retry_backoff must be finite and non-negative")
         headers: dict[str, str] = {"Content-Type": "application/json"}
         if api_key:
             headers["Authorization"] = f"Bearer {api_key}"
@@ -67,6 +80,10 @@ class MindGraph:
     # ---- HTTP helpers ----
 
     def _request(self, method: str, path: str, json: Any = None) -> Any:
+        # Keep a keyed request stable even if its caller mutates the input while
+        # we wait. The same payload and key must be sent on every attempt.
+        json = deepcopy(json)
+        retry_safe = can_retry_request(method, path, json)
         last_error: MindGraphError | None = None
         for attempt in range(self._max_retries + 1):
             resp = self._client.request(method, path, json=json)
@@ -80,24 +97,11 @@ class MindGraph:
                     resp.status_code,
                     body,
                 )
-                # Retry on 503 (server warming up or tenant pool at capacity).
-                # When the server sends Retry-After (delta-seconds), honor it —
-                # the cloud's admission control sizes that hint so the total
-                # client wait stays bounded; blind exponential backoff on top
-                # of a server-side wait once composed into ~47 s worst-case
-                # hangs. Capped at 10 s per attempt so a malformed or hostile
-                # header cannot park the client.
-                if resp.status_code == 503 and attempt < self._max_retries:
+                # A server hint never makes an unprotected write idempotent.
+                if (resp.status_code == 503 and retry_safe and err.retriable is not False
+                        and err.code not in TERMINAL_CODES and attempt < self._max_retries):
                     last_error = err
-                    delay = self._retry_backoff * (2**attempt)
-                    retry_after = resp.headers.get("retry-after")
-                    if retry_after is not None:
-                        try:
-                            hinted = float(retry_after)
-                            if hinted > 0:
-                                delay = min(hinted, 10.0)
-                        except ValueError:
-                            pass
+                    delay = retry_delay(resp.headers.get("retry-after"), self._retry_backoff, attempt)
                     time.sleep(delay)
                     continue
                 raise err

@@ -252,3 +252,21 @@ except MindGraphError as e:
 ## License
 
 MIT
+
+### Retry and engine-error contract
+
+HTTP 503 retries are bounded and apply only to reviewed reads (including selected
+POST query actions) and keyed `/agent/plan` work operations: `claim_task`,
+`heartbeat`, `start_iteration`, `checkpoint_iteration`, `block_task`,
+`complete_task`, and `abandon_iteration`. These work operations atomically store
+their mutation and idempotency receipt. A nonempty `idempotency_key` must stay
+unchanged across attempts. Other writes are not retried automatically; supplying
+a key or telemetry request ID on an unsupported route does not change that.
+
+`MindGraphError` preserves the response `status` and `body` and exposes optional
+`code` and `retriable` fields. Explicit `retriable: false` always stops retries,
+including admission failures and index maintenance. Memory limits, timeouts,
+and cancellation remain failures; they do not become empty search results.
+Older responses without retry guidance retain retries only for the reviewed
+operations above. Each delay, including fallback backoff, is capped at 10 seconds.
+Network exceptions and other HTTP statuses are not automatically retried.
