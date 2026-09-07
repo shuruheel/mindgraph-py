@@ -1,5 +1,7 @@
 """Reviewed retry semantics; keep the TypeScript SDK's policy in sync."""
 
+from __future__ import annotations
+
 import math
 from typing import Any
 
