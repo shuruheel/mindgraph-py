@@ -102,6 +102,8 @@ VALID_ACTIONS: dict[str, set[str]] = {
         "get_preferences",
         "set_policy",
         "get_policies",
+        "set_remember_instructions",
+        "get_remember_instructions",
     },
     "/memory/sync": {"scan", "begin", "record", "finalize", "status", "abandon"},
     "/agent/plan": {
@@ -166,7 +168,12 @@ VALID_ACTIONS: dict[str, set[str]] = {
 }
 
 # Endpoints that are monolithic (must NOT carry an ``action`` field).
-MONOLITHIC_ENDPOINTS: set[str] = {"/epistemic/argument", "/memory/distill"}
+MONOLITHIC_ENDPOINTS: set[str] = {
+    "/epistemic/argument",
+    "/memory/distill",
+    "/memory/remember",
+    "/memory/forget",
+}
 
 # Field-name conventions enforced by the server (SDK-Server Field Name
 # Conventions in CLAUDE.md). The offline test asserts these positively.
@@ -184,6 +191,46 @@ FIELD_CONVENTIONS = {
 # ---------------------------------------------------------------------------
 
 CONTRACT: list[dict] = [
+    {
+        # MONOLITHIC fast path: no action; `text` is the only required field.
+        "method": "remember",
+        "http_method": "POST",
+        "path": "/memory/remember",
+        "action": None,
+        "required_fields": ["text", "custom_id"],
+        "forbidden_fields": ["action"],
+        "positional": ["User prefers dark mode"],
+        "args": {"custom_id": "pref:theme"},
+    },
+    {
+        # MONOLITHIC: target by custom_id (or uid); dry_run is a preview.
+        "method": "forget",
+        "http_method": "POST",
+        "path": "/memory/forget",
+        "action": None,
+        "required_fields": ["custom_id", "dry_run"],
+        "forbidden_fields": ["action", "uid"],
+        "positional": [],
+        "args": {"custom_id": "pref:theme", "dry_run": True},
+    },
+    {
+        "method": "set_remember_instructions",
+        "http_method": "POST",
+        "path": "/memory/config",
+        "action": "set_remember_instructions",
+        "required_fields": ["action", "text"],
+        "positional": ["Remember decisions and deploy targets."],
+        "args": {},
+    },
+    {
+        "method": "get_remember_instructions",
+        "http_method": "POST",
+        "path": "/memory/config",
+        "action": "get_remember_instructions",
+        "required_fields": ["action"],
+        "positional": [],
+        "args": {},
+    },
     # ---- Reality ----
     {
         "method": "create_series",

@@ -105,6 +105,9 @@ entity = graph.find_or_create_entity("Some Entity")
 |--------|-------------|
 | `session(**kwargs)` | Open a session, record traces, or close a session |
 | `journal(label, props?, *, summary?, session_uid?, ...)` | Record a journal entry linked to an optional session |
+| `remember(text, *, custom_id?, label?, space_uid?, on_near_duplicate?)` | Small-text fast path: synchronous write, BM25- and vector-searchable on return; `custom_id` makes re-sends an upsert |
+| `forget(*, uid? \| custom_id?, dry_run?, cascade?, reason?)` | Reversible removal; `dry_run=True` previews the affected edge uids |
+| `set_remember_instructions(text, *, space_uid?)` / `get_remember_instructions()` | Per-Space guidance for what agents should remember; surfaced on `remember()` and `retrieve_context()` |
 | `distill(**kwargs)` | Create a Summary, Lesson, or governed Skill candidate with source provenance |
 | `memory_config(**kwargs)` | Set/get preferences and memory policies |
 
