@@ -683,6 +683,104 @@ class MindGraph:
     def memory_sync(self, **kwargs: Any) -> Any:
         return self._request("POST", "/memory/sync", kwargs)
 
+    # ---- Memory (fast path) ----
+
+    def remember(
+        self,
+        text: str,
+        *,
+        custom_id: str | None = None,
+        label: str | None = None,
+        props: dict[str, Any] | None = None,
+        confidence: float | None = None,
+        salience: float | None = None,
+        agent_id: str | None = None,
+        space_uid: str | None = None,
+        on_near_duplicate: Literal["reuse", "create"] | None = None,
+    ) -> dict[str, Any]:
+        """Store a small piece of text as a memory, synchronously.
+
+        The node is BM25- and vector-searchable when this returns (the
+        ``searchable`` field says which). ``custom_id`` makes re-sends an
+        upsert of the same node: new text bumps the version and keeps
+        history; identical text is a no-op (``action == "unchanged"``).
+        Without ``custom_id`` an exact duplicate is reused unless
+        ``on_near_duplicate="create"``.
+        """
+        body: dict[str, Any] = {"text": text}
+        for key, value in (
+            ("custom_id", custom_id),
+            ("label", label),
+            ("props", props),
+            ("confidence", confidence),
+            ("salience", salience),
+            ("agent_id", agent_id),
+            ("space_uid", space_uid),
+            ("on_near_duplicate", on_near_duplicate),
+        ):
+            if value is not None:
+                body[key] = value
+        return self._request("POST", "/memory/remember", body)
+
+    def forget(
+        self,
+        *,
+        uid: str | None = None,
+        custom_id: str | None = None,
+        dry_run: bool = False,
+        cascade: bool | None = None,
+        reason: str | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Reversibly remove a memory by ``uid`` or ``custom_id``.
+
+        Tombstones the node and (by default) its connected edges;
+        ``dry_run=True`` previews the affected ``edge_uids`` without changing
+        anything. Undo with ``restore(uid)`` and
+        ``evolve(action="restore_edge", uid=edge_uid)`` per edge.
+        """
+        if not uid and not custom_id:
+            raise ValueError("forget() requires uid or custom_id")
+        body: dict[str, Any] = {}
+        if uid:
+            body["uid"] = uid
+        else:
+            body["custom_id"] = custom_id
+        if dry_run:
+            body["dry_run"] = True
+        if cascade is not None:
+            body["cascade"] = cascade
+        if reason:
+            body["reason"] = reason
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/memory/forget", body)
+
+    def set_remember_instructions(
+        self,
+        text: str,
+        *,
+        space_uid: str | None = None,
+        agent_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Operator guidance for what agents should remember into a Space.
+
+        Surfaced on every ``remember()`` response and on
+        ``retrieve_context()``. An empty string clears it.
+        """
+        body: dict[str, Any] = {"action": "set_remember_instructions", "text": text}
+        if space_uid:
+            body["space_uid"] = space_uid
+        if agent_id:
+            body["agent_id"] = agent_id
+        return self._request("POST", "/memory/config", body)
+
+    def get_remember_instructions(self, *, space_uid: str | None = None) -> dict[str, Any]:
+        body: dict[str, Any] = {"action": "get_remember_instructions"}
+        if space_uid:
+            body["space_uid"] = space_uid
+        return self._request("POST", "/memory/config", body)
+
     # ---- Agent Layer ----
 
     def plan(self, **kwargs: Any) -> Any:

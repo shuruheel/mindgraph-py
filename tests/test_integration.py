@@ -410,6 +410,37 @@ class TestMemorySession:
 # ============================================================
 # 13. Memory: Distill & Config
 # ============================================================
+class TestMemoryRemember:
+    def test_remember_is_searchable_on_return(self, mg, uids):
+        r = mg.remember(
+            "PY SDK remembers: the deploy target is fly app mg-prod-sdk-test",
+            custom_id="py-sdk-test:deploy-target",
+        )
+        assert r["action"] in ("inserted", "updated", "unchanged")
+        assert r["searchable"]["bm25"] is True
+        uids["memory"] = r["uid"]
+        hits = mg.search("mg-prod-sdk-test deploy target", limit=10)
+        found = [h for h in (hits if isinstance(hits, list) else hits.get("results", []))
+                 if h.get("node", {}).get("uid") == r["uid"]]
+        assert found, "remembered node must be BM25-searchable immediately"
+
+    def test_custom_id_upserts_the_same_node(self, mg, uids):
+        r = mg.remember(
+            "PY SDK remembers: the deploy target is fly app mg-prod-sdk-test-2",
+            custom_id="py-sdk-test:deploy-target",
+        )
+        assert r["uid"] == uids["memory"]
+        assert r["action"] == "updated"
+
+    def test_forget_dry_run_then_forget(self, mg, uids):
+        preview = mg.forget(custom_id="py-sdk-test:deploy-target", dry_run=True)
+        assert preview["dry_run"] is True
+        assert preview["uid"] == uids["memory"]
+        done = mg.forget(custom_id="py-sdk-test:deploy-target")
+        assert done["action"] == "forgotten"
+        assert done["uid"] == uids["memory"]
+
+
 class TestMemoryDistillConfig:
     def test_distill(self, mg, uids):
         r = mg.distill(
