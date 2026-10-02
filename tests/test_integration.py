@@ -212,8 +212,8 @@ class TestEpistemicInquiry:
 class TestEpistemicArgument:
     def test_argue(self, mg, uids):
         r = mg.argue(
-            claim={"label": "PY Claim", "statement": "SDKs need tests"},
-            evidence=[{"label": "PY Evidence", "statement": "Data shows bugs in untested SDKs"}],
+            claim={"label": f"PY Claim {RUN}", "statement": "SDKs need tests"},
+            evidence=[{"label": f"PY Evidence {RUN}", "statement": "Data shows bugs in untested SDKs"}],
         )
         assert "claim_uid" in r
         uids["claim"] = r["claim_uid"]
