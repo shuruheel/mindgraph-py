@@ -2,6 +2,45 @@
 
 ## Unreleased
 
+## 0.16.0 (2026-10-02)
+
+The small-text memory fast path and a reviewed retry policy. Requires MindGraph
+Cloud or `mindgraph-server` 1.14.0 for the new `/memory/remember` and
+`/memory/forget` routes; every other method is unchanged.
+
+### Added
+
+- `remember(text, *, custom_id=None, label=None, props=None, confidence=None,
+  salience=None, agent_id=None, space_uid=None, on_near_duplicate=None)` →
+  `POST /memory/remember`: a synchronous write that is BM25- and
+  vector-searchable when it returns (`searchable["bm25"]` / `["vector"]` report
+  readiness honestly). A stable `custom_id` makes re-sends an upsert of the same
+  node (`action` of `"updated"` or `"unchanged"`) instead of a duplicate; without
+  one, an exact duplicate is reused unless `on_near_duplicate="create"`.
+- `forget(*, uid=None, custom_id=None, dry_run=False, cascade=None, reason=None,
+  agent_id=None)` → `POST /memory/forget`: reversible removal (tombstone plus
+  connected edges); `dry_run=True` previews the affected `edge_uids`, and the
+  response names the undo path (`restore` + `restore_edge`). Raises `ValueError`
+  when neither target is given.
+- `set_remember_instructions(text, *, space_uid=None, agent_id=None)` /
+  `get_remember_instructions(*, space_uid=None)` on `/memory/config`: per-Space
+  operator guidance returned on every `remember()` response and at the top level
+  of `retrieve_context()`.
+
+### Changed
+
+- Retries follow the server's guidance (`mindgraph/_retry.py`). A 503 is
+  retried only for reviewed read requests and the keyed work operations
+  (`claim_task`, `heartbeat`, `start_iteration`, `checkpoint_iteration`,
+  `block_task`, `complete_task`, `abandon_iteration`), never for other writes;
+  an explicit `retriable: false` in the error body always stops retries.
+  `MindGraphError` exposes the server's `code` and `retriable` fields. The policy
+  is kept in step with the TypeScript SDK.
+
+### Fixed
+
+- Annotations in the retry module stay compatible with Python 3.9.
+
 ## 0.15.1 (2026-08-19)
 
 Patch release for the authored ontology-object contract used by the investment
