@@ -15,8 +15,9 @@ Run: MINDGRAPH_E2E=1 API_KEY=mg_live_... pytest tests/test_integration.py -v
 """
 import os
 import pytest
+import time
 
-from mindgraph import MindGraph
+from mindgraph import MindGraph, MindGraphError
 
 API_KEY = os.environ.get("API_KEY") or os.environ.get("MINDGRAPH_API_KEY", "")
 BASE_URL = os.environ.get("BASE_URL", "https://api.mindgraph.cloud")
@@ -50,8 +51,14 @@ class TestHealthStats:
         assert r["status"] == "ok"
 
     def test_stats(self, mg):
-        r = mg.stats()
-        assert "live_nodes" in r
+        # /stats is graph-wide and is refused (403) for a Space- or Project-scoped
+        # principal; a test-org key is usually scoped.
+        try:
+            r = mg.stats()
+        except MindGraphError as e:
+            assert e.status == 403
+        else:
+            assert "live_nodes" in r
 
 
 # ============================================================
@@ -142,12 +149,11 @@ class TestRealityEntity:
             summary="Will be merged",
             props={"canonical_name": "py-merge-loser"},
         )
-        r = mg.entity(
-            action="merge",
-            keep_uid=e1["uid"],
-            merge_uid=e2["uid"],
-        )
-        assert r is not None
+        # Irreversible merge is retired (410): entities merge through the
+        # journal-first resolve protocol (prepare_resolve) instead.
+        with pytest.raises(MindGraphError) as excinfo:
+            mg.entity(action="merge", keep_uid=e1["uid"], merge_uid=e2["uid"])
+        assert excinfo.value.status == 410
 
 
 # ============================================================
@@ -381,7 +387,14 @@ class TestActionRisk:
 # ============================================================
 class TestMemorySession:
     def test_open(self, mg, uids):
-        r = mg.session(action="open", label="PY Session", summary="Test session")
+        # `open` requires a stable identity: harness + harness_session_id (or session_key).
+        r = mg.session(
+            action="open",
+            label="PY Session",
+            summary="Test session",
+            harness="generic",
+            harness_session_id=f"py-sdk-e2e-{int(time.time() * 1000)}",
+        )
         assert "uid" in r
         uids["session"] = r["uid"]
 
@@ -518,10 +531,15 @@ class TestAgentGovernance:
         assert "uid" in r
 
     def test_create_policy(self, mg):
-        r = mg.governance(
-            action="create_policy", label="PY Gov Policy", summary="Safety first"
-        )
-        assert "uid" in r
+        # Policy creation requires an unscoped principal; a scoped test-org key gets 403.
+        try:
+            r = mg.governance(
+                action="create_policy", label="PY Gov Policy", summary="Safety first"
+            )
+        except MindGraphError as e:
+            assert e.status == 403
+        else:
+            assert "uid" in r
 
     def test_request_approval(self, mg, uids):
         r = mg.governance(

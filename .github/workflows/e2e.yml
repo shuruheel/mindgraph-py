@@ -29,5 +29,5 @@ jobs:
         env:
           MINDGRAPH_E2E: '1'
           API_KEY: ${{ secrets.MINDGRAPH_E2E_API_KEY }}
-          BASE_URL: ${{ github.event.inputs.base_url }}
+          BASE_URL: ${{ inputs.base_url || 'https://api.mindgraph.cloud' }}
         run: pytest tests/test_integration.py -v
