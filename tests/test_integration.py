@@ -22,6 +22,8 @@ from mindgraph import MindGraph, MindGraphError
 API_KEY = os.environ.get("API_KEY") or os.environ.get("MINDGRAPH_API_KEY", "")
 BASE_URL = os.environ.get("BASE_URL", "https://api.mindgraph.cloud")
 E2E_OPT_IN = os.environ.get("MINDGRAPH_E2E", "").lower() in ("1", "true", "yes", "on")
+# Per-run suffix: write-time resolution answers an exact label/identity repeat with 409 near_duplicate.
+RUN = format(int(time.time() * 1000), "x")
 
 pytestmark = pytest.mark.skipif(
     not (E2E_OPT_IN and API_KEY),
@@ -68,7 +70,7 @@ class TestRealityCapture:
     def test_source(self, mg, uids):
         r = mg.capture(
             action="source",
-            label="PY SDK Test Source",
+            label=f"PY SDK Test Source {RUN}",
             summary="Integration test source",
             props={"uri": "https://example.com", "title": "Example"},
         )
@@ -78,7 +80,7 @@ class TestRealityCapture:
     def test_snippet(self, mg, uids):
         r = mg.capture(
             action="snippet",
-            label="PY SDK Test Snippet",
+            label=f"PY SDK Test Snippet {RUN}",
             summary="A snippet from the source",
             source_uid=uids["source"],
         )
@@ -87,7 +89,7 @@ class TestRealityCapture:
     def test_observation(self, mg, uids):
         r = mg.capture(
             action="observation",
-            label="PY SDK Test Observation",
+            label=f"PY SDK Test Observation {RUN}",
             summary="Something observed during testing",
             props={"content": "The SDK is working well"},
         )
@@ -102,9 +104,9 @@ class TestRealityEntity:
     def test_create(self, mg, uids):
         r = mg.entity(
             action="create",
-            label="PY SDK Test Entity",
+            label=f"PY SDK Test Entity {RUN}",
             summary="A test entity",
-            props={"canonical_name": "py-test-entity", "entity_type": "concept"},
+            props={"canonical_name": f"py-test-entity-{RUN}", "entity_type": "concept"},
         )
         assert "uid" in r
         uids["entity"] = r["uid"]
@@ -131,7 +133,7 @@ class TestRealityEntity:
         assert r is not None
 
     def test_find_or_create_entity(self, mg, uids):
-        r = mg.find_or_create_entity("PY SDK Find-or-Create", {"canonical_name": "py-foc"})
+        r = mg.find_or_create_entity(f"PY SDK Find-or-Create {RUN}", {"canonical_name": f"py-foc-{RUN}"})
         assert "uid" in r
         uids["foc_entity"] = r["uid"]
 
@@ -139,15 +141,15 @@ class TestRealityEntity:
         # Create two fresh entities for merge (don't touch the shared entity)
         e1 = mg.entity(
             action="create",
-            label="PY Merge Winner",
+            label=f"PY Merge Winner {RUN}",
             summary="Will survive",
-            props={"canonical_name": "py-merge-winner"},
+            props={"canonical_name": f"py-merge-winner-{RUN}"},
         )
         e2 = mg.entity(
             action="create",
-            label="PY Merge Loser",
+            label=f"PY Merge Loser {RUN}",
             summary="Will be merged",
-            props={"canonical_name": "py-merge-loser"},
+            props={"canonical_name": f"py-merge-loser-{RUN}"},
         )
         # Irreversible merge is retired (410): entities merge through the
         # journal-first resolve protocol (prepare_resolve) instead.
@@ -163,20 +165,20 @@ class TestEpistemicInquiry:
     def test_hypothesis(self, mg):
         r = mg.inquire(
             action="hypothesis",
-            label="PY Hypothesis",
+            label=f"PY Hypothesis {RUN}",
             summary="If we test, quality improves",
             props={"statement": "Testing leads to quality"},
         )
         assert "uid" in r
 
     def test_theory(self, mg):
-        r = mg.inquire(action="theory", label="PY Theory", summary="Theory of reliability")
+        r = mg.inquire(action="theory", label=f"PY Theory {RUN}", summary="Theory of reliability")
         assert "uid" in r
 
     def test_question(self, mg):
         r = mg.inquire(
             action="question",
-            label="PY Question",
+            label=f"PY Question {RUN}",
             summary="How to improve?",
             props={"question": "How to improve coverage?"},
         )
@@ -185,22 +187,22 @@ class TestEpistemicInquiry:
     def test_open_question(self, mg):
         r = mg.inquire(
             action="open_question",
-            label="PY Open Question",
+            label=f"PY Open Question {RUN}",
             summary="What is quality?",
             props={"question": "What is quality?"},
         )
         assert "uid" in r
 
     def test_assumption(self, mg):
-        r = mg.inquire(action="assumption", label="PY Assumption", summary="Tests are pure")
+        r = mg.inquire(action="assumption", label=f"PY Assumption {RUN}", summary="Tests are pure")
         assert "uid" in r
 
     def test_anomaly(self, mg):
-        r = mg.inquire(action="anomaly", label="PY Anomaly", summary="Unexpected pass")
+        r = mg.inquire(action="anomaly", label=f"PY Anomaly {RUN}", summary="Unexpected pass")
         assert "uid" in r
 
     def test_paradigm(self, mg):
-        r = mg.inquire(action="paradigm", label="PY Paradigm", summary="TDD paradigm")
+        r = mg.inquire(action="paradigm", label=f"PY Paradigm {RUN}", summary="TDD paradigm")
         assert "uid" in r
 
 
@@ -249,14 +251,14 @@ class TestEpistemicStructure:
 # ============================================================
 class TestIntentCommitment:
     def test_goal(self, mg, uids):
-        r = mg.commit(action="goal", label="PY Goal", summary="Complete tests")
+        r = mg.commit(action="goal", label=f"PY Goal {RUN}", summary="Complete tests")
         assert "uid" in r
         uids["goal"] = r["uid"]
 
     def test_project(self, mg, uids):
         r = mg.commit(
             action="project",
-            label="PY Project",
+            label=f"PY Project {RUN}",
             summary="SDK test project",
             parent_uid=uids["goal"],
         )
@@ -266,7 +268,7 @@ class TestIntentCommitment:
     def test_milestone(self, mg, uids):
         r = mg.commit(
             action="milestone",
-            label="PY Milestone",
+            label=f"PY Milestone {RUN}",
             summary="All green",
             parent_uid=uids["project"],
         )
@@ -280,7 +282,7 @@ class TestIntentDeliberation:
     def test_open_decision(self, mg, uids):
         r = mg.deliberate(
             action="open_decision",
-            label="PY Decision",
+            label=f"PY Decision {RUN}",
             summary="Which framework?",
         )
         assert "uid" in r
@@ -289,7 +291,7 @@ class TestIntentDeliberation:
     def test_add_option(self, mg, uids):
         r = mg.deliberate(
             action="add_option",
-            label="Option: pytest",
+            label=f"Option: pytest {RUN}",
             summary="Use pytest",
             decision_uid=uids["decision"],
         )
@@ -298,7 +300,7 @@ class TestIntentDeliberation:
     def test_add_constraint(self, mg, uids):
         r = mg.deliberate(
             action="add_constraint",
-            label="Must be fast",
+            label=f"Must be fast {RUN}",
             summary="Under 60s",
             decision_uid=uids["decision"],
         )
@@ -308,13 +310,13 @@ class TestIntentDeliberation:
         # Create an option to choose
         opt = mg.deliberate(
             action="add_option",
-            label="Option: unittest",
+            label=f"Option: unittest {RUN}",
             summary="Use unittest",
             decision_uid=uids["decision"],
         )
         r = mg.deliberate(
             action="resolve",
-            label="Chose pytest",
+            label=f"Chose pytest {RUN}",
             summary="pytest selected",
             decision_uid=uids["decision"],
             chosen_option_uid=opt["uid"],
@@ -332,14 +334,14 @@ class TestIntentDeliberation:
 # ============================================================
 class TestActionProcedure:
     def test_create_flow(self, mg, uids):
-        r = mg.procedure(action="create_flow", label="PY Flow", summary="Test workflow")
+        r = mg.procedure(action="create_flow", label=f"PY Flow {RUN}", summary="Test workflow")
         assert "uid" in r
         uids["flow"] = r["uid"]
 
     def test_add_step(self, mg, uids):
         r = mg.procedure(
             action="add_step",
-            label="Step 1",
+            label=f"Step 1 {RUN}",
             summary="Setup",
             flow_uid=uids["flow"],
         )
@@ -348,7 +350,7 @@ class TestActionProcedure:
     def test_add_affordance(self, mg):
         r = mg.procedure(
             action="add_affordance",
-            label="PY Affordance",
+            label=f"PY Affordance {RUN}",
             summary="Can test",
             props={"action_name": "run_tests"},
         )
@@ -357,7 +359,7 @@ class TestActionProcedure:
     def test_add_control(self, mg):
         r = mg.procedure(
             action="add_control",
-            label="PY Control",
+            label=f"PY Control {RUN}",
             summary="Lint first",
             props={"condition": "lint passes", "action": "allow"},
         )
@@ -371,7 +373,7 @@ class TestActionRisk:
     def test_assess(self, mg):
         r = mg.risk(
             action="assess",
-            label="PY Risk",
+            label=f"PY Risk {RUN}",
             summary="Untested code paths",
             props={"vulnerability": "gaps", "mitigation": "more tests"},
         )
@@ -390,7 +392,7 @@ class TestMemorySession:
         # `open` requires a stable identity: harness + harness_session_id (or session_key).
         r = mg.session(
             action="open",
-            label="PY Session",
+            label=f"PY Session {RUN}",
             summary="Test session",
             harness="generic",
             harness_session_id=f"py-sdk-e2e-{int(time.time() * 1000)}",
@@ -399,8 +401,7 @@ class TestMemorySession:
         uids["session"] = r["uid"]
 
     def test_journal(self, mg, uids):
-        r = mg.journal(
-            "PY Journal Entry",
+        r = mg.journal(f"PY Journal Entry {RUN}",
             {"content": "Testing journal"},
             session_uid=uids["session"],
         )
@@ -409,7 +410,7 @@ class TestMemorySession:
     def test_trace(self, mg, uids):
         r = mg.session(
             action="trace",
-            label="PY Trace",
+            label=f"PY Trace {RUN}",
             summary="Debug",
             session_uid=uids["session"],
         )
@@ -457,7 +458,7 @@ class TestMemoryRemember:
 class TestMemoryDistillConfig:
     def test_distill(self, mg, uids):
         r = mg.distill(
-            label="PY Lesson",
+            label=f"PY Lesson {RUN}",
             summary="Tests catch bugs",
             source_uids=[uids["observation"]],
         )
@@ -466,7 +467,7 @@ class TestMemoryDistillConfig:
     def test_set_preference(self, mg):
         r = mg.memory_config(
             action="set_preference",
-            label="PY Pref",
+            label=f"PY Pref {RUN}",
             summary="Verbose output",
             props={"key": "verbosity", "value": "high"},
         )
@@ -475,7 +476,7 @@ class TestMemoryDistillConfig:
     def test_set_policy(self, mg):
         r = mg.memory_config(
             action="set_policy",
-            label="PY Policy",
+            label=f"PY Policy {RUN}",
             summary="Test first",
             props={"principle": "test before commit"},
         )
@@ -495,18 +496,18 @@ class TestMemoryDistillConfig:
 # ============================================================
 class TestAgentPlan:
     def test_create_task(self, mg):
-        r = mg.plan(action="create_task", label="PY Task", summary="Do something")
+        r = mg.plan(action="create_task", label=f"PY Task {RUN}", summary="Do something")
         assert "uid" in r
 
     def test_create_plan(self, mg, uids):
-        r = mg.plan(action="create_plan", label="PY Plan", summary="Master plan")
+        r = mg.plan(action="create_plan", label=f"PY Plan {RUN}", summary="Master plan")
         assert "uid" in r
         uids["plan"] = r["uid"]
 
     def test_add_step(self, mg, uids):
         r = mg.plan(
             action="add_step",
-            label="Plan Step",
+            label=f"Plan Step {RUN}",
             summary="Setup",
             plan_uid=uids["plan"],
         )
@@ -524,7 +525,7 @@ class TestAgentGovernance:
     def test_set_budget(self, mg):
         r = mg.governance(
             action="set_budget",
-            label="PY Budget",
+            label=f"PY Budget {RUN}",
             summary="Resource limits",
             props={"description": "Budget"},
         )
@@ -534,7 +535,7 @@ class TestAgentGovernance:
         # Policy creation requires an unscoped principal; a scoped test-org key gets 403.
         try:
             r = mg.governance(
-                action="create_policy", label="PY Gov Policy", summary="Safety first"
+                action="create_policy", label=f"PY Gov Policy {RUN}", summary="Safety first"
             )
         except MindGraphError as e:
             assert e.status == 403
@@ -544,7 +545,7 @@ class TestAgentGovernance:
     def test_request_approval(self, mg, uids):
         r = mg.governance(
             action="request_approval",
-            label="PY Approval",
+            label=f"PY Approval {RUN}",
             summary="Need approval",
         )
         assert "uid" in r
@@ -568,24 +569,24 @@ class TestAgentGovernance:
 # ============================================================
 class TestAgentExecution:
     def test_start(self, mg, uids):
-        r = mg.execution(action="start", label="PY Execution", summary="Running")
+        r = mg.execution(action="start", label=f"PY Execution {RUN}", summary="Running")
         assert "uid" in r
         uids["execution"] = r["uid"]
 
     def test_complete(self, mg, uids):
         r = mg.execution(
             action="complete",
-            label="Done",
+            label=f"Done {RUN}",
             summary="Passed",
             execution_uid=uids["execution"],
         )
         assert r is not None
 
     def test_fail(self, mg):
-        start = mg.execution(action="start", label="PY Fail Exec", summary="Will fail")
+        start = mg.execution(action="start", label=f"PY Fail Exec {RUN}", summary="Will fail")
         r = mg.execution(
             action="fail",
-            label="Failed",
+            label=f"Failed {RUN}",
             summary="Error",
             execution_uid=start["uid"],
         )
@@ -594,7 +595,7 @@ class TestAgentExecution:
     def test_register_agent(self, mg):
         r = mg.execution(
             action="register_agent",
-            label="PY Test Agent",
+            label=f"PY Test Agent {RUN}",
             summary="Integration test agent",
         )
         assert "uid" in r
@@ -681,7 +682,7 @@ class TestEvolve:
         assert r is not None
 
     def test_tombstone_and_restore(self, mg):
-        node = mg.capture(action="observation", label="PY Evolve Temp", summary="Temp")
+        node = mg.capture(action="observation", label=f"PY Evolve Temp {RUN}", summary="Temp")
         uid = node["uid"]
         mg.evolve(action="tombstone", uid=uid, reason="test")
         mg.evolve(action="restore", uid=uid)
@@ -695,7 +696,7 @@ class TestNodeCRUD:
         # Create
         node = mg.add_node(
             "PY CRUD Node",
-            props={"_type": "Entity", "canonical_name": "py-crud", "description": "test"},
+            props={"_type": "Entity", "canonical_name": f"py-crud-{RUN}", "description": "test"},
         )
         assert "uid" in node
         uid = node["uid"]
@@ -756,7 +757,7 @@ class TestTraversalShortcuts:
 # ============================================================
 class TestLifecycleShortcuts:
     def test_tombstone_and_restore(self, mg):
-        node = mg.capture(action="observation", label="PY Lifecycle Temp", summary="Temp")
+        node = mg.capture(action="observation", label=f"PY Lifecycle Temp {RUN}", summary="Temp")
         uid = node["uid"]
         mg.tombstone(uid, "testing shortcuts")
         mg.restore(uid)
