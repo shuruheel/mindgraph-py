@@ -242,7 +242,7 @@ class TestEpistemicStructure:
         ],
     )
     def test_structure_actions(self, mg, action):
-        r = mg.structure(action=action, label=f"PY {action}", summary=f"Test {action}")
+        r = mg.structure(action=action, label=f"PY {action} {RUN}", summary=f"Test {action}")
         assert "uid" in r
 
 
