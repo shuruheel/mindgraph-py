@@ -436,6 +436,25 @@ def test_retrieve_context_forwards_budgeted_expansion_options():
     client.close()
 
 
+def test_retrieve_context_forwards_world_time_filters():
+    cap = Capture()
+    client = make_client(cap, response_json={"graph": {"nodes": [], "edges": []}})
+    client.retrieve_context(
+        "pilot budget",
+        as_of="2024-09-15",
+        occurred_from="2024-01",
+        occurred_to="2024-06",
+    )
+    assert cap.path == "/retrieve/context"
+    assert cap.body == {
+        "query": "pilot budget",
+        "as_of": "2024-09-15",
+        "occurred_from": "2024-01",
+        "occurred_to": "2024-06",
+    }
+    client.close()
+
+
 @pytest.mark.parametrize(
     ("method", "expected_path"),
     [
