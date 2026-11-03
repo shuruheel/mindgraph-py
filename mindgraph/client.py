@@ -1456,6 +1456,9 @@ class MindGraph:
         graph_expansion_limit: int | None = None,
         graph_max_depth: int | None = None,
         valid_at: str | None = None,
+        as_of: str | None = None,
+        occurred_from: str | None = None,
+        occurred_to: str | None = None,
     ) -> dict[str, Any]:
         """Retrieve context from the knowledge graph.
 
@@ -1489,6 +1492,15 @@ class MindGraph:
                 cheapest-first graph expansion (default 0, direct-only).
             graph_max_depth: Maximum graph-expansion hops (default 2).
             valid_at: ISO-8601 date used to annotate temporal validity.
+            as_of: World-time perspective. Nodes and chunks whose effective
+                start is after this ISO-8601 date are excluded; closed claims
+                stay (annotated ``valid_at_time: False``); undated nodes stay.
+                Wiki articles are skipped under a time-scoped read. The
+                response then carries a ``time_filter`` block.
+            occurred_from: Inclusive lower bound of an occurrence window.
+            occurred_to: Inclusive upper bound of an occurrence window. Only
+                nodes and chunks whose effective interval overlaps the window
+                are returned; undated nodes are excluded under a window.
         """
         body: dict[str, Any] = {"query": query}
         if project_uid:
@@ -1513,6 +1525,12 @@ class MindGraph:
             body["graph_max_depth"] = graph_max_depth
         if valid_at is not None:
             body["valid_at"] = valid_at
+        if as_of is not None:
+            body["as_of"] = as_of
+        if occurred_from is not None:
+            body["occurred_from"] = occurred_from
+        if occurred_to is not None:
+            body["occurred_to"] = occurred_to
         return self._request("POST", "/retrieve/context", body)
 
     def backfill_node_sources(self) -> dict[str, Any]:
