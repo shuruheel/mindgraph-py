@@ -1492,9 +1492,15 @@ class MindGraph:
                 cheapest-first graph expansion (default 0, direct-only).
             graph_max_depth: Maximum graph-expansion hops (default 2).
             valid_at: ISO-8601 date used to annotate temporal validity.
-            as_of: World-time perspective. Nodes and chunks whose effective
-                start is after this ISO-8601 date are excluded; closed claims
-                stay (annotated ``valid_at_time: False``); undated nodes stay.
+            as_of: Point-in-time perspective by **statement time**: a node
+                is admitted when at least one of its source documents was
+                stated (``occurred_at``, else ``publication_date``) on or
+                before this ISO-8601 date; its own fact dates never exclude
+                it. Nodes stated on both sides of the date keep only their
+                earlier sources (``spans_as_of``); undated nodes stay; closed
+                claims stay (annotated ``valid_at_time: False``). The
+                response's ``time_filter.axis`` is ``statement_time``; use
+                ``occurred_from``/``occurred_to`` for a fact-time window.
                 Wiki articles are skipped under a time-scoped read. The
                 response then carries a ``time_filter`` block.
             occurred_from: Inclusive lower bound of an occurrence window.
