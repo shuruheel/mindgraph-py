@@ -1459,8 +1459,20 @@ class MindGraph:
         as_of: str | None = None,
         occurred_from: str | None = None,
         occurred_to: str | None = None,
+        format: str | None = None,
+        max_tokens: int | None = None,
+        sort: str | None = None,
+        retrieval_mode: str | None = None,
     ) -> dict[str, Any]:
         """Retrieve context from the knowledge graph.
+
+        ``format="text"`` (server 1.14+) adds ``context_text``, ``used_tokens``,
+        ``truncated`` and ``omitted`` — the canonical rendering every door
+        shares (dated items, supersession and conflict markers, a hard token
+        budget of ``max_tokens``, minimum 256, default 8000). ``sort`` orders
+        ``graph.nodes`` (``"rank"`` default or ``"chronological"``);
+        ``retrieval_mode="exhaustive"`` widens retrieval for list/count
+        questions.
 
         Returns articles (synthesized wiki summaries), graph nodes with
         source_documents provenance, and optionally raw chunks.
@@ -1492,9 +1504,15 @@ class MindGraph:
                 cheapest-first graph expansion (default 0, direct-only).
             graph_max_depth: Maximum graph-expansion hops (default 2).
             valid_at: ISO-8601 date used to annotate temporal validity.
-            as_of: World-time perspective. Nodes and chunks whose effective
-                start is after this ISO-8601 date are excluded; closed claims
-                stay (annotated ``valid_at_time: False``); undated nodes stay.
+            as_of: Point-in-time perspective by **statement time**: a node
+                is admitted when at least one of its source documents was
+                stated (``occurred_at``, else ``publication_date``) on or
+                before this ISO-8601 date; its own fact dates never exclude
+                it. Nodes stated on both sides of the date keep only their
+                earlier sources (``spans_as_of``); undated nodes stay; closed
+                claims stay (annotated ``valid_at_time: False``). The
+                response's ``time_filter.axis`` is ``statement_time``; use
+                ``occurred_from``/``occurred_to`` for a fact-time window.
                 Wiki articles are skipped under a time-scoped read. The
                 response then carries a ``time_filter`` block.
             occurred_from: Inclusive lower bound of an occurrence window.
@@ -1531,6 +1549,14 @@ class MindGraph:
             body["occurred_from"] = occurred_from
         if occurred_to is not None:
             body["occurred_to"] = occurred_to
+        if format is not None:
+            body["format"] = format
+        if max_tokens is not None:
+            body["max_tokens"] = max_tokens
+        if sort is not None:
+            body["sort"] = sort
+        if retrieval_mode is not None:
+            body["retrieval_mode"] = retrieval_mode
         return self._request("POST", "/retrieve/context", body)
 
     def backfill_node_sources(self) -> dict[str, Any]:
