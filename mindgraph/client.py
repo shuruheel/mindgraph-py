@@ -1463,6 +1463,13 @@ class MindGraph:
         max_tokens: int | None = None,
         sort: str | None = None,
         retrieval_mode: str | None = None,
+        include_ledger: bool | None = None,
+        article_char_limit: int | None = None,
+        article_min_similarity: float | None = None,
+        explain: bool | None = None,
+        ontology: dict[str, Any] | None = None,
+        intent: str | None = None,
+        rerank: bool | None = None,
     ) -> dict[str, Any]:
         """Retrieve context from the knowledge graph.
 
@@ -1519,6 +1526,24 @@ class MindGraph:
             occurred_to: Inclusive upper bound of an occurrence window. Only
                 nodes and chunks whose effective interval overlaps the window
                 are returned; undated nodes are excluded under a window.
+            include_ledger: Re-admit operational ledger and work-state nodes
+                (sessions, executions, tasks, plans), excluded by default.
+            article_char_limit: Bound each article's ``content`` to this many
+                characters by query-aware excerpting (default 6000; 0 =
+                unlimited). The response flags ``excerpted``.
+            article_min_similarity: Cosine floor for admitted articles
+                (default 0 = off).
+            explain: Attach per-leg hybrid contributions (``retrieval_legs``)
+                to direct nodes. Honored only for unscoped callers.
+            ontology: Ontology leg control, ``{"mode": "auto" | "off",
+                "schema_id": ...}``. The leg runs only when the server has it
+                enabled and the org has an active schema.
+            intent: What the caller is doing right now (an agent's task, the
+                last turns of a conversation), at most 2,000 characters. Read
+                only by the question-aware reranker; never used as a search
+                term and never stored.
+            rerank: Apply the question-aware rerank to graph-expansion
+                candidates. Omitted uses the server default (off).
         """
         body: dict[str, Any] = {"query": query}
         if project_uid:
@@ -1557,6 +1582,20 @@ class MindGraph:
             body["sort"] = sort
         if retrieval_mode is not None:
             body["retrieval_mode"] = retrieval_mode
+        if include_ledger is not None:
+            body["include_ledger"] = include_ledger
+        if article_char_limit is not None:
+            body["article_char_limit"] = article_char_limit
+        if article_min_similarity is not None:
+            body["article_min_similarity"] = article_min_similarity
+        if explain is not None:
+            body["explain"] = explain
+        if ontology is not None:
+            body["ontology"] = ontology
+        if intent is not None:
+            body["intent"] = intent
+        if rerank is not None:
+            body["rerank"] = rerank
         return self._request("POST", "/retrieve/context", body)
 
     def backfill_node_sources(self) -> dict[str, Any]:

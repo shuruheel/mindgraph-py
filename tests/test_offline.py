@@ -455,6 +455,35 @@ def test_retrieve_context_forwards_world_time_filters():
     client.close()
 
 
+def test_retrieve_context_forwards_rerank_intent_and_explain_options():
+    # Failure prevented: the server accepted these since 1.14 but the client
+    # had no way to send them, so rerank and intent were unreachable from Python.
+    cap = Capture()
+    client = make_client(cap, response_json={"graph": {"nodes": [], "edges": []}})
+    client.retrieve_context(
+        "entity resolution",
+        rerank=True,
+        intent="drafting the dedup section of the design doc",
+        explain=True,
+        include_ledger=False,
+        article_char_limit=0,
+        article_min_similarity=0.3,
+        ontology={"mode": "off"},
+    )
+    assert cap.path == "/retrieve/context"
+    assert cap.body == {
+        "query": "entity resolution",
+        "rerank": True,
+        "intent": "drafting the dedup section of the design doc",
+        "explain": True,
+        "include_ledger": False,
+        "article_char_limit": 0,
+        "article_min_similarity": 0.3,
+        "ontology": {"mode": "off"},
+    }
+    client.close()
+
+
 @pytest.mark.parametrize(
     ("method", "expected_path"),
     [
