@@ -1417,7 +1417,16 @@ class MindGraph:
         participants: list[dict[str, Any]] | None = None,
         occurred_at: str | None = None,
         context: str | None = None,
+        idempotency_key: str | None = None,
     ) -> dict[str, Any]:
+        """Ingest a session transcript. Returns the job and the transcript Document.
+
+        ``idempotency_key`` makes a retry safe: a request whose key already
+        produced a transcript returns that Document with ``deduplicated: True``
+        and an empty ``job_id`` instead of storing a second one. A server that
+        predates the key ignores it and stores the transcript again. The client
+        does not retry this call on its own, with or without a key.
+        """
         body: dict[str, Any] = {"content": content}
         if title:
             body["title"] = title
@@ -1439,6 +1448,8 @@ class MindGraph:
             body["occurred_at"] = occurred_at
         if context:
             body["context"] = context
+        if idempotency_key:
+            body["idempotency_key"] = idempotency_key
         return self._request("POST", "/ingest/session", body)
 
     def retrieve_context(

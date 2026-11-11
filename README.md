@@ -206,7 +206,7 @@ See the [Operational Ontology](https://mindgraph.cloud/docs/ontology) and [Conne
 |--------|-------------|
 | `ingest_chunk(content, *, chunk_type?, ...)` | Ingest a single text chunk (sync): stores, embeds, and runs LLM extraction |
 | `ingest_document(content, *, title?, ...)` | Ingest a full document (async): chunks text, returns job ID |
-| `ingest_session(content, *, session_uid?, ...)` | Ingest a session transcript (async): links to session, returns job ID |
+| `ingest_session(content, *, session_uid?, idempotency_key?, ...)` | Ingest a session transcript (async): links to session, returns job ID. With `idempotency_key`, a retry returns the first transcript instead of storing a second |
 | `retrieve_context(query, *, graph_expansion_limit?, graph_max_depth?, ...)` | Direct retrieval plus optional cheapest-first graph expansion |
 | `get_job(job_id)` | Get async job status and progress |
 | `clear_graph()` | Clear all graph data |
