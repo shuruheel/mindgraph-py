@@ -455,6 +455,27 @@ def test_retrieve_context_forwards_world_time_filters():
     client.close()
 
 
+def test_ingest_session_forwards_the_idempotency_key_and_is_never_auto_retried():
+    # Failure prevented: a caller retrying after a timeout had no way to tell
+    # the server the request was a repeat, so the transcript was stored twice.
+    cap = Capture()
+    client = make_client(cap, response_json={"job_id": "", "document_uid": "doc-1", "deduplicated": True})
+    reply = client.ingest_session("user: hello", title="t", session_uid="s-1", idempotency_key="batch-1")
+    assert cap.path == "/ingest/session"
+    assert cap.body == {
+        "content": "user: hello", "title": "t", "session_uid": "s-1", "idempotency_key": "batch-1",
+    }
+    assert reply["deduplicated"] is True
+
+    client.ingest_session("user: hello")
+    assert "idempotency_key" not in cap.body
+
+    # A key on this write does not opt it into the client's own retries.
+    from mindgraph._retry import can_retry_request
+
+    assert not can_retry_request("POST", "/ingest/session", {"content": "x", "idempotency_key": "batch-1"})
+
+
 def test_retrieve_context_forwards_rerank_intent_and_explain_options():
     # Failure prevented: the server accepted these since 1.14 but the client
     # had no way to send them, so rerank and intent were unreachable from Python.
