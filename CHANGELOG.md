@@ -1,8 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.18.0
 
-### Memory API v1 (0.18.0 candidate; not released)
+### Memory API v1
 
 - Add typed immutable Space-bound clients for remember, context, forget, list, and profile, capability discovery, scoped response validation, and read-only retry classification. Requires a server advertising `memory.v1`; unsupported servers fail explicitly without legacy fallback. Existing APIs remain available.
 
