@@ -4,6 +4,8 @@
 
 ### Memory API v1
 
+- Keep response and request annotations evaluable on the supported Python 3.9 minimum.
+
 - Add typed immutable Space-bound clients for remember, context, forget, list, and profile, capability discovery, scoped response validation, and read-only retry classification. Requires a server advertising `memory.v1`; unsupported servers fail explicitly without legacy fallback. Existing APIs remain available.
 
 
