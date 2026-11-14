@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypedDict, Union, cast
 
 if TYPE_CHECKING:
     from .client import MindGraph
@@ -68,7 +68,7 @@ class MemoryItem(Currency):
     node_type: str
     layer: str
     label: str
-    summary: str | None
+    summary: Optional[str]
     text: str
     version: int
     created_at: float
@@ -80,7 +80,7 @@ class MemoryItem(Currency):
 
 class ListResponse(Envelope):
     items: list[MemoryItem]
-    next_cursor: str | None
+    next_cursor: Optional[str]
 
 class Omissions(TypedDict):
     item_limit: int
@@ -107,12 +107,12 @@ class Searchable(TypedDict):
     vector: bool
 
 class InstructionError(TypedDict):
-    code: str | None
-    retriable: bool | None
+    code: Optional[str]
+    retriable: Optional[bool]
 
 class RememberResponse(Envelope):
     uid: str
-    custom_id: str | None
+    custom_id: Optional[str]
     action: Literal["inserted", "updated", "unchanged", "reused"]
     label: str
     version: int
@@ -120,8 +120,8 @@ class RememberResponse(Envelope):
     embedded: bool
     searchable: Searchable
     near_duplicates: list[dict[str, Any]]
-    remember_instructions: str | None
-    remember_instructions_error: InstructionError | None
+    remember_instructions: Optional[str]
+    remember_instructions_error: Optional[InstructionError]
 
 class ForgetUndo(TypedDict):
     node: str
@@ -177,46 +177,46 @@ class MemoryClient:
                                      {"code": "unsupported_capability", "retriable": False}) from error
             raise
 
-    def remember(self, text: str, *, custom_id: str | None = None, label: str | None = None,
-                 props: dict[str, Any] | None = None, confidence: float | None = None,
-                 salience: float | None = None,
-                 on_near_duplicate: Literal["reuse", "create"] | None = None) -> RememberResponse:
+    def remember(self, text: str, *, custom_id: Optional[str] = None, label: Optional[str] = None,
+                 props: Optional[dict[str, Any]] = None, confidence: Optional[float] = None,
+                 salience: Optional[float] = None,
+                 on_near_duplicate: Optional[Literal["reuse", "create"]] = None) -> RememberResponse:
         return cast(RememberResponse, self._call("remember", {
             "text": text, "custom_id": custom_id, "label": label, "props": props,
             "confidence": confidence, "salience": salience, "on_near_duplicate": on_near_duplicate}))
 
-    def forget(self, *, uid: str | None = None, custom_id: str | None = None,
+    def forget(self, *, uid: Optional[str] = None, custom_id: Optional[str] = None,
                dry_run: bool = False, cascade: Literal[False] = False,
-               reason: str | None = None) -> ForgetResponse:
+               reason: Optional[str] = None) -> ForgetResponse:
         if bool(uid) == bool(custom_id):
             raise ValueError("Provide exactly one uid or custom_id")
         return cast(ForgetResponse, self._call("forget", {"uid": uid, "custom_id": custom_id,
                     "dry_run": dry_run, "cascade": cascade, "reason": reason}))
 
-    def list(self, *, project_uid: str | None = None, node_filter: NodeFilter | None = None,
-             limit: int | None = None, cursor: str | None = None) -> ListResponse:
+    def list(self, *, project_uid: Optional[str] = None, node_filter: Optional[NodeFilter] = None,
+             limit: Optional[int] = None, cursor: Optional[str] = None) -> ListResponse:
         return cast(ListResponse, self._call("list", {"project_uid": project_uid,
                     "node_filter": node_filter, "limit": limit, "cursor": cursor}))
 
-    def profile(self, *, project_uid: str | None = None, node_filter: NodeFilter | None = None,
-                include_org_space: bool = False, sections: list[Section] | None = None,
-                max_items: int | None = None, format: Literal["json", "text"] = "json",
-                max_tokens: int | None = None) -> TextProfileResponse:
+    def profile(self, *, project_uid: Optional[str] = None, node_filter: Optional[NodeFilter] = None,
+                include_org_space: bool = False, sections: Optional[list[Section]] = None,
+                max_items: Optional[int] = None, format: Literal["json", "text"] = "json",
+                max_tokens: Optional[int] = None) -> TextProfileResponse:
         return cast(TextProfileResponse, self._call("profile", {"project_uid": project_uid,
                     "node_filter": node_filter, "include_org_space": include_org_space,
                     "sections": sections, "max_items": max_items, "format": format,
                     "max_tokens": max_tokens}))
 
-    def context(self, query: str, *, project_uid: str | None = None,
-                include_org_space: bool = False, node_filter: NodeFilter | None = None,
-                node_limit: int | None = None, article_limit: int | None = None,
-                chunk_limit: int | None = None, node_types: list[str] | None = None,
-                layer: str | None = None, graph_expansion_limit: int | None = None,
-                graph_max_depth: int | None = None, valid_at: str | None = None,
-                as_of: str | None = None, occurred_from: str | None = None,
-                occurred_to: str | None = None, sort: Literal["rank", "chronological"] | None = None,
-                ontology: dict[str, str] | None = None, format: Literal["json", "text"] = "json",
-                max_tokens: int | None = None) -> ContextResponse:
+    def context(self, query: str, *, project_uid: Optional[str] = None,
+                include_org_space: bool = False, node_filter: Optional[NodeFilter] = None,
+                node_limit: Optional[int] = None, article_limit: Optional[int] = None,
+                chunk_limit: Optional[int] = None, node_types: Optional[list[str]] = None,
+                layer: Optional[str] = None, graph_expansion_limit: Optional[int] = None,
+                graph_max_depth: Optional[int] = None, valid_at: Optional[str] = None,
+                as_of: Optional[str] = None, occurred_from: Optional[str] = None,
+                occurred_to: Optional[str] = None, sort: Optional[Literal["rank", "chronological"]] = None,
+                ontology: Optional[dict[str, str]] = None, format: Literal["json", "text"] = "json",
+                max_tokens: Optional[int] = None) -> ContextResponse:
         options = dict(locals())
         del options["self"]
         return cast(ContextResponse, self._call("context", options))

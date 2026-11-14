@@ -44,3 +44,17 @@ def test_write_response_models_cover_the_captured_contract():
             assert set(fixture["response"]) <= set(get_type_hints(model))
     undo = get_type_hints(ForgetResponse)["undo"]
     assert get_type_hints(undo) == {"node": str}
+
+
+def test_public_memory_response_annotations_are_runtime_evaluable():
+    from typing import get_type_hints
+    from mindgraph.memory import (
+        InstructionError, ListResponse, MemoryItem, ProfileResponse,
+        RememberResponse, TextProfileResponse,
+    )
+
+    for response_type in (
+        InstructionError, ListResponse, MemoryItem, ProfileResponse,
+        RememberResponse, TextProfileResponse,
+    ):
+        assert get_type_hints(response_type)
