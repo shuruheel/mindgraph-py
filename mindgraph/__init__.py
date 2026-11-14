@@ -45,6 +45,7 @@ from .ontology import (
 )
 
 __all__ = [
+    "MemoryClient",
     "MindGraph",
     "MindGraphError",
     "SkillDistillProps",
@@ -91,3 +92,5 @@ __all__ = [
     "SemanticValidationMode",
     "UpdateOntologySchemaRequest",
 ]
+
+from .memory import MemoryClient
