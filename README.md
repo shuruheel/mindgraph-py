@@ -1,5 +1,29 @@
 # mindgraph
 
+## Scoped memory API
+
+Requires a server advertising `memory.v1` and an SDK build exposing `memory()`.
+The bound Space selects within your credential's access; it grants no access.
+
+```python
+memory = client.memory(space_uid="space:project:alpha")
+if "memory.v1" not in client.contracts()["contracts"]:
+    raise RuntimeError("memory.v1 unavailable")
+memory.remember("Use the staging cluster", custom_id="deploy-target")
+context = memory.context(query="Which cluster?", format="text", max_tokens=1000)
+profile = memory.profile(format="text")
+page = memory.list(limit=20)
+memory.forget(custom_id="deploy-target")
+```
+
+`include_org_space=True` explicitly adds permitted organization knowledge to
+context/profile. `project_uid` intersects reads with Project source membership.
+Inspect `complete`, `omitted`, `unavailable` and the named estimated-token budget.
+List cursors use live UID order. Keys are Space-local and separate from legacy
+organization-wide keys. Forget affects one node; cascade is unsupported. Failures
+never silently fall back to a legacy endpoint. See the [Memory API guide](https://mindgraph.cloud/docs/memory).
+
+
 [![PyPI](https://img.shields.io/pypi/v/mindgraph-sdk)](https://pypi.org/project/mindgraph-sdk/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 

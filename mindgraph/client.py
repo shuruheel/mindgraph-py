@@ -9,6 +9,7 @@ from typing import Any, Literal, TypedDict, overload
 
 import httpx
 
+from .memory import MemoryClient
 from ._retry import TERMINAL_CODES, can_retry_request, retry_delay
 
 
@@ -92,6 +93,10 @@ class MindGraph:
                     body = resp.json()
                 except Exception:
                     body = resp.text
+                if (path.startswith("/memory/v1/") and resp.status_code not in (401, 403)
+                        and resp.headers.get("x-mindgraph-contract") != "memory.v1"
+                        and (resp.status_code in (404, 405) or isinstance(body, str))):
+                    body = {"code": "endpoint_unavailable", "retriable": False}
                 err = MindGraphError(
                     f"{method} {path} failed: {resp.status_code}",
                     resp.status_code,
@@ -105,10 +110,51 @@ class MindGraph:
                     time.sleep(delay)
                     continue
                 raise err
+            if (path == "/memory/v1" or path.startswith("/memory/v1/")) and not 200 <= resp.status_code < 300:
+                raise MindGraphError("Memory endpoint did not return success", resp.status_code,
+                                     {"code": "endpoint_unavailable", "retriable": False})
+            if path.startswith("/memory/v1/"):
+                try:
+                    value = resp.json()
+                except Exception as exc:
+                    raise MindGraphError("Incompatible memory response", resp.status_code,
+                                         {"code": "incompatible_response"}) from exc
+                valid = (isinstance(value, dict) and value.get("contract") == "memory.v1"
+                         and resp.headers.get("x-mindgraph-contract") == "memory.v1"
+                         and value.get("scope") == json["scope"]
+                         and value.get("project_uid") == json.get("project_uid"))
+                if path.endswith(("/context", "/profile")):
+                    valid = valid and value.get("include_org_space") == json.get("include_org_space", False)
+                if not valid:
+                    raise MindGraphError("Incompatible memory response", resp.status_code,
+                                         {"code": "incompatible_response"})
+                return value
             if not resp.content:
                 return None
             return resp.json()
         raise last_error  # type: ignore[misc]
+
+    def memory(self, *, space_uid: str) -> MemoryClient:
+        """Bind an immutable Space selector without making a request."""
+        return MemoryClient(self, space_uid)
+
+    def contracts(self) -> dict[str, list[str]]:
+        """Read fully implemented/enabled contracts; never infer from a proxy error."""
+        try:
+            value = self._request("GET", "/memory/v1")
+        except MindGraphError as error:
+            if error.status in (401, 403):
+                raise
+            raise MindGraphError("Capability endpoint unavailable", error.status,
+                                 {"code": "endpoint_unavailable"}) from error
+        except Exception as error:
+            raise MindGraphError("Capability endpoint unavailable", 0,
+                                 {"code": "endpoint_unavailable"}) from error
+        if (not isinstance(value, dict) or not isinstance(value.get("contracts"), list)
+                or not all(isinstance(c, str) for c in value["contracts"])):
+            raise MindGraphError("Invalid capability response", 200,
+                                 {"code": "endpoint_unavailable"})
+        return value
 
     # ---- Health ----
 

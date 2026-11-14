@@ -6,6 +6,7 @@ import math
 from typing import Any
 
 READ_POSTS = {
+    "/memory/v1/context", "/memory/v1/profile", "/memory/v1/list",
     "/search", "/retrieve/context", "/nodes/batch", "/edges/batch", "/subgraph",
     "/embeddings/search", "/embeddings/search-text", "/ontology/query",
     "/ontology/query/structured", "/ontology/objects/search",

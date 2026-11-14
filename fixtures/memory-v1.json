@@ -1,0 +1,348 @@
+{
+  "contract": "memory.v1",
+  "cases": [
+    {
+      "name": "remember",
+      "operation": "remember",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "text": "staging cluster",
+        "custom_id": "deploy-target"
+      },
+      "status": 201,
+      "response": {
+        "action": "inserted",
+        "contract": "memory.v1",
+        "custom_id": "deploy-target",
+        "embedded": false,
+        "label": "staging cluster",
+        "near_duplicates": [],
+        "remember_instructions": null,
+        "remember_instructions_error": null,
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "searchable": {
+          "bm25": true,
+          "vector": false
+        },
+        "space_uid": "space:wire-conformance",
+        "uid": "3c00df35-b5eb-4e4a-b59d-30aac895c690",
+        "version": 1
+      }
+    },
+    {
+      "name": "context",
+      "operation": "context",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "query": "staging",
+        "include_org_space": false,
+        "article_limit": 0,
+        "chunk_limit": 0,
+        "ontology": {
+          "mode": "off"
+        },
+        "format": "text",
+        "max_tokens": 1000
+      },
+      "status": 200,
+      "response": {
+        "budget": {
+          "limit": 1000,
+          "method": "mindgraph_estimate_v1",
+          "truncated": false,
+          "used": 75
+        },
+        "context_text": "Legend: dates are when something was said.\nNow: 2026-11-14\n## Undated\n[undated] Observation — staging cluster\n\nReader rule: where two statements in the record disagree and no resolution is recorded, quote both as stated and ask the user which statement is correct before relying on either.\n",
+        "contract": "memory.v1",
+        "coverage": {
+          "covered": [
+            "staging"
+          ],
+          "extraction": "lexical",
+          "phrases": [
+            "staging"
+          ],
+          "uncovered": []
+        },
+        "graph": {
+          "edges": [],
+          "nodes": [
+            {
+              "confidence": 1.0,
+              "label": "staging cluster",
+              "node_type": "Observation",
+              "occurred_at": null,
+              "props": {
+                "content": "staging cluster",
+                "observation_type": "memory",
+                "session_uid": null,
+                "timestamp": null
+              },
+              "retrieval_origin": "direct",
+              "space_uid": "space:wire-conformance",
+              "stated_at": [],
+              "summary": "staging cluster",
+              "uid": "3c00df35-b5eb-4e4a-b59d-30aac895c690"
+            }
+          ]
+        },
+        "include_org_space": false,
+        "now": "2026-11-14",
+        "omitted": {
+          "articles": 0,
+          "chunks": 0,
+          "conflicts": 0,
+          "injections": 0,
+          "node_details": 0,
+          "nodes": 0
+        },
+        "ontology": {
+          "mode": "off",
+          "schema_ids": [],
+          "skipped": "disabled"
+        },
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "truncated": false,
+        "used_tokens": 75
+      }
+    },
+    {
+      "name": "profile",
+      "operation": "profile",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "format": "text",
+        "max_tokens": 4000,
+        "include_org_space": false
+      },
+      "status": 200,
+      "response": {
+        "budget": {
+          "limit": 4000,
+          "method": "mindgraph_estimate_v1",
+          "truncated": false,
+          "used": 17
+        },
+        "complete": true,
+        "computed_at": "2026-11-14T01:14:46.516167+00:00",
+        "context_text": "## memories\n- staging cluster [3c00df35-b5eb-4e4a-b59d-30aac895c690]",
+        "contract": "memory.v1",
+        "include_org_space": false,
+        "omitted": {
+          "item_limit": 0,
+          "text_budget": 0,
+          "unsafe_summary": 0
+        },
+        "profile": {
+          "decisions": [],
+          "goals": [],
+          "lessons": [],
+          "memories": [
+            {
+              "confidence": 1.0,
+              "created_at": 1794618886.183206,
+              "label": "staging cluster",
+              "layer": "reality",
+              "node_type": "Observation",
+              "salience": 0.5,
+              "source_uids": [],
+              "space_uid": "space:wire-conformance",
+              "summary": "staging cluster",
+              "text": "staging cluster",
+              "uid": "3c00df35-b5eb-4e4a-b59d-30aac895c690",
+              "updated_at": 1794618886.183206,
+              "version": 1
+            }
+          ],
+          "preferences": []
+        },
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "unavailable": []
+      }
+    },
+    {
+      "name": "list",
+      "operation": "list",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "limit": 20
+      },
+      "status": 200,
+      "response": {
+        "contract": "memory.v1",
+        "items": [
+          {
+            "confidence": 1.0,
+            "created_at": 1794618886.183206,
+            "label": "staging cluster",
+            "layer": "reality",
+            "node_type": "Observation",
+            "salience": 0.5,
+            "source_uids": [],
+            "space_uid": "space:wire-conformance",
+            "summary": "staging cluster",
+            "text": "staging cluster",
+            "uid": "3c00df35-b5eb-4e4a-b59d-30aac895c690",
+            "updated_at": 1794618886.183206,
+            "version": 1
+          }
+        ],
+        "next_cursor": null,
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        }
+      }
+    },
+    {
+      "name": "invalid_filter",
+      "operation": "list",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "node_filter": {
+          "field": "salience",
+          "op": "gt",
+          "value": 2
+        }
+      },
+      "status": 400,
+      "response": {
+        "error": "node_filter: invalid numeric predicate",
+        "code": "invalid_filter",
+        "retriable": false
+      }
+    },
+    {
+      "name": "missing_scope",
+      "operation": "list",
+      "request": {
+        "scope": {
+          "space_uid": "space:absent"
+        }
+      },
+      "status": 404,
+      "response": {
+        "error": "No Space with this ID is visible to this credential",
+        "code": "scope_not_found",
+        "retriable": false
+      }
+    },
+    {
+      "name": "forget_preview",
+      "operation": "forget",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "custom_id": "deploy-target",
+        "dry_run": true,
+        "cascade": false
+      },
+      "status": 200,
+      "response": {
+        "action": "preview",
+        "cascade": false,
+        "contract": "memory.v1",
+        "dry_run": true,
+        "edge_uids": [],
+        "edges_tombstoned": 0,
+        "label": "staging cluster",
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "uid": "3c00df35-b5eb-4e4a-b59d-30aac895c690",
+        "undo": {
+          "node": "/evolve action=restore"
+        },
+        "would_tombstone_edges": 0
+      }
+    },
+    {
+      "name": "forget",
+      "operation": "forget",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "custom_id": "deploy-target",
+        "dry_run": false,
+        "cascade": false
+      },
+      "status": 200,
+      "response": {
+        "action": "forgotten",
+        "cascade": false,
+        "contract": "memory.v1",
+        "dry_run": false,
+        "edge_uids": [],
+        "edges_tombstoned": 0,
+        "label": "staging cluster",
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "uid": "3c00df35-b5eb-4e4a-b59d-30aac895c690",
+        "undo": {
+          "node": "/evolve action=restore"
+        },
+        "would_tombstone_edges": 0
+      }
+    },
+    {
+      "name": "empty_profile",
+      "operation": "profile",
+      "request": {
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "format": "text",
+        "max_tokens": 4000,
+        "include_org_space": false
+      },
+      "status": 200,
+      "response": {
+        "budget": {
+          "limit": 4000,
+          "method": "mindgraph_estimate_v1",
+          "truncated": false,
+          "used": 0
+        },
+        "complete": true,
+        "computed_at": "2026-11-14T01:14:46.692864+00:00",
+        "context_text": "",
+        "contract": "memory.v1",
+        "include_org_space": false,
+        "omitted": {
+          "item_limit": 0,
+          "text_budget": 0,
+          "unsafe_summary": 0
+        },
+        "profile": {
+          "decisions": [],
+          "goals": [],
+          "lessons": [],
+          "memories": [],
+          "preferences": []
+        },
+        "scope": {
+          "space_uid": "space:wire-conformance"
+        },
+        "unavailable": []
+      }
+    }
+  ]
+}
