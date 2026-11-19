@@ -10,7 +10,9 @@ concurrency:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    # Pinned: ubuntu-latest moved to 26.04, whose image has no Python 3.9 for
+    # setup-python, and 3.9 is the supported minimum this job exists to test.
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         python: ['3.9', '3.12']
