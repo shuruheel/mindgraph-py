@@ -11,6 +11,13 @@
 
 ### Added
 
+- **`known_on` on `retrieve_context`.** A UTC date or date-time: the read answers
+  from what had been recorded by that moment, of what is still kept. The
+  response carries a `known_on` block (the echoed date, `changed_since`,
+  `expansion`, `pool_short`). Needs a server with the read enabled. A server
+  that predates the field ignores it, so the client raises `MindGraphError`
+  with code `known_on_ignored` when the echo is missing instead of returning
+  today's answer under a past date.
 - **`idempotency_key` on `ingest_session`.** A request whose key already
   produced a transcript returns that Document with `deduplicated: True` and an
   empty `job_id`, so a retry after a timeout does not store the transcript
