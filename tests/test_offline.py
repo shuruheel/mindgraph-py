@@ -455,6 +455,33 @@ def test_retrieve_context_forwards_world_time_filters():
     client.close()
 
 
+def test_retrieve_context_forwards_known_on_and_returns_the_echo():
+    cap = Capture()
+    client = make_client(cap, response_json={
+        "graph": {"nodes": [], "edges": []},
+        "known_on": {"date": "2026-05-01", "changed_since": 0, "expansion": "skipped", "pool_short": False},
+    })
+    result = client.retrieve_context("contract term", known_on="2026-05-01")
+    assert cap.body == {"query": "contract term", "known_on": "2026-05-01"}
+    assert result["known_on"]["date"] == "2026-05-01"
+    client.close()
+
+
+def test_retrieve_context_refuses_an_answer_from_a_server_that_ignored_known_on():
+    # Failure prevented: an older server drops the unknown field and returns
+    # today's graph, which the caller would read as the past.
+    from mindgraph import MindGraphError
+
+    cap = Capture()
+    client = make_client(cap, response_json={"graph": {"nodes": [], "edges": []}})
+    with pytest.raises(MindGraphError) as raised:
+        client.retrieve_context("contract term", known_on="2026-05-01")
+    assert raised.value.code == "known_on_ignored"
+    # Without the field no echo is needed.
+    assert client.retrieve_context("contract term") == {"graph": {"nodes": [], "edges": []}}
+    client.close()
+
+
 def test_ingest_session_forwards_the_idempotency_key_and_is_never_auto_retried():
     # Failure prevented: a caller retrying after a timeout had no way to tell
     # the server the request was a repeat, so the transcript was stored twice.

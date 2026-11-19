@@ -1527,6 +1527,7 @@ class MindGraph:
         ontology: dict[str, Any] | None = None,
         intent: str | None = None,
         rerank: bool | None = None,
+        known_on: str | None = None,
     ) -> dict[str, Any]:
         """Retrieve context from the knowledge graph.
 
@@ -1601,6 +1602,19 @@ class MindGraph:
                 term and never stored.
             rerank: Apply the question-aware rerank to graph-expansion
                 candidates. Omitted uses the server default (off).
+            known_on: Recorded-time perspective: answer from what had been
+                recorded by this moment, of what is still kept. A UTC date
+                (``"2026-05-01"``, read as the end of that day) or date-time
+                (``"2026-05-01T09:30:00Z"``). Items, links and sources
+                recorded later are left out; kept items carry their current
+                content, with ``changed_since: True`` when they changed after
+                the bound. Deletion and access are today's at every date.
+                Composes with ``as_of`` and ``valid_at``, which read world
+                time. The response carries a ``known_on`` block. A server with
+                the read disabled answers 400 ``known_on_disabled``; a server
+                that predates the field ignores it, so this method raises
+                ``MindGraphError`` with code ``known_on_ignored`` when the
+                echo is missing.
         """
         body: dict[str, Any] = {"query": query}
         if project_uid:
@@ -1653,7 +1667,20 @@ class MindGraph:
             body["intent"] = intent
         if rerank is not None:
             body["rerank"] = rerank
-        return self._request("POST", "/retrieve/context", body)
+        if known_on is not None:
+            body["known_on"] = known_on
+        result = self._request("POST", "/retrieve/context", body)
+        # A server that predates ``known_on`` ignores the field and answers
+        # from today's graph. Refuse that answer rather than return it under a date.
+        if known_on is not None:
+            echo = result.get("known_on") if isinstance(result, dict) else None
+            if not (isinstance(echo, dict) and isinstance(echo.get("date"), str)):
+                raise MindGraphError(
+                    "POST /retrieve/context ignored known_on: the server does not support the recorded-time read",
+                    200,
+                    {"code": "known_on_ignored", "retriable": False},
+                )
+        return result
 
     def backfill_node_sources(self) -> dict[str, Any]:
         """Backfill node_source provenance from existing ExtractedFrom edges."""
