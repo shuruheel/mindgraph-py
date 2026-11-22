@@ -1,5 +1,22 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- **Document Readiness Lifecycle (`document-status.v1`, RL4).** Added sync
+  (`MindGraph`) and async (`AsyncMindGraph`) `get_document_status(document_uid)`
+  and `wait_for_document(document_uid, ...)` helpers with attempt pinning,
+  `attempt_state`-only active/terminal classification, transparent
+  `409 status_changed` retry, RFC 9110 `Retry-After` clamping to deadline,
+  immediate `ValidationError` bounds checks (`1 <= timeout_ms <= 300_000`),
+  `threading.Event` / `asyncio.Event` cancellation, typed errors
+  (`ValidationError`, `ReadinessUnknownError`, `DocumentSupersededError`,
+  `ReadinessNotRequestedError`, `DocumentIncompleteError`,
+  `DocumentWaitTimeoutError`, `DocumentWaitCancelledError`), TypedDict shapes
+  (`DocumentStatus`, `DocumentStatusReadiness`, `DocumentStatusError`), and
+  optional `reprocess` on `resume_document`.
+
 ## 0.18.0
 
 ### Memory API v1
