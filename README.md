@@ -229,11 +229,34 @@ See the [Operational Ontology](https://mindgraph.cloud/docs/ontology) and [Conne
 | Method | Description |
 |--------|-------------|
 | `ingest_chunk(content, *, chunk_type?, ...)` | Ingest a single text chunk (sync): stores, embeds, and runs LLM extraction |
-| `ingest_document(content, *, title?, ...)` | Ingest a full document (async): chunks text, returns job ID |
-| `ingest_session(content, *, session_uid?, idempotency_key?, ...)` | Ingest a session transcript (async): links to session, returns job ID. With `idempotency_key`, a retry returns the first transcript instead of storing a second |
-| `retrieve_context(query, *, graph_expansion_limit?, graph_max_depth?, ...)` | Direct retrieval plus optional cheapest-first graph expansion |
-| `get_job(job_id)` | Get async job status and progress |
+| `ingest_document(content, *, title?, ...)` | Ingest a full document (async): chunks text, returns `job_id`, `document_uid`, `generation_id`, and `attempt_id` |
+| `ingest_session(content, *, session_uid?, idempotency_key?, ...)` | Ingest a session transcript (async): links to session, returns `job_id`, `document_uid`, `generation_id`, and `attempt_id`. With `idempotency_key`, a retry returns the first transcript instead of storing a second |
+| `get_document_status(document_uid)` | Read authoritative document readiness (`document-status.v1`: `lexical`, `vector`, `extraction`, `attempt_state`, `job_available`) — sync on `MindGraph` and async on `AsyncMindGraph` |
+| `wait_for_document(document_uid, *, attempt_id?, until?, timeout_ms?, interval_ms?, cancel_event?)` | Read-only bounded poll (`1 <= timeout_ms <= 300_000`) until `until` (`"lexical"`, `"vector"`, or `"extraction"`) is `"ready"`; pins `attempt_id`, retries `409 status_changed` & `Retry-After`, supports `threading.Event` / `asyncio.Event`, raises typed errors (`DocumentSupersededError`, `ReadinessUnknownError`, `ReadinessNotRequestedError`, `DocumentIncompleteError`, `DocumentWaitTimeoutError`, `DocumentWaitCancelledError`) |
+| `resume_document(doc_uid, *, layers?, agent_id?, reprocess?)` | Resume an incomplete document ingestion (`reprocess=True` allows redoing completed passes whose pipeline digest changed) |
+| `retrieve_context(query, *, graph_expansion_limit?, graph_max_depth?, known_on?, ...)` | Direct retrieval plus optional cheapest-first graph expansion |
+| `get_job(job_id)` | Get in-memory async job status and progress |
 | `clear_graph()` | Clear all graph data |
+
+#### Waiting for document readiness (`document-status.v1`)
+
+```python
+from mindgraph import AsyncMindGraph, MindGraph
+
+# Sync
+receipt = graph.ingest_document(content=full_text, title="Q4 Architecture Review")
+status = graph.wait_for_document(
+    receipt["document_uid"],
+    attempt_id=receipt.get("attempt_id"),
+    until="extraction",
+    timeout_ms=60_000,
+)
+print(status["readiness"])  # {'lexical': 'ready', 'vector': 'ready', 'extraction': 'ready'}
+
+# Async
+async with AsyncMindGraph(base_url, api_key=api_key) as agraph:
+    status = await agraph.wait_for_document(receipt["document_uid"], until="vector")
+```
 
 ### Lifecycle Shortcuts
 
