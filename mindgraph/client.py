@@ -1304,6 +1304,31 @@ class MindGraph:
         )
         return r.get("steps", []) if isinstance(r, dict) else r
 
+    def epistemic_support(
+        self,
+        uid: str,
+        *,
+        k: int = 3,
+        max_hops: int = 6,
+    ) -> dict[str, Any]:
+        """EA7 Use 2: weighted epistemic support chains & alternative-proof survival.
+
+        Calls ``POST /traverse`` with ``action="epistemic_support"``. Returns
+        ``survival_status`` (``supported`` / ``unbacked`` / ``partially_invalidated`` /
+        ``unsupported_invalidated``), ``has_broken_dependency``, ``score_semantics``
+        (``ranking_triage_not_bayesian_posterior``), and ranked ``chains``.
+        """
+        return self._request(
+            "POST",
+            "/traverse",
+            {
+                "action": "epistemic_support",
+                "start_uid": uid,
+                "k": k,
+                "max_hops": max_hops,
+            },
+        )
+
     def subgraph(
         self,
         uid: str,
@@ -2459,6 +2484,25 @@ class AsyncMindGraph:
 
     async def get_job(self, job_id: str) -> Dict[str, Any]:
         return await self._request("GET", f"/jobs/{quote(job_id, safe='')}")
+
+    async def epistemic_support(
+        self,
+        uid: str,
+        *,
+        k: int = 3,
+        max_hops: int = 6,
+    ) -> Dict[str, Any]:
+        """EA7 Use 2: weighted epistemic support chains & alternative-proof survival."""
+        return await self._request(
+            "POST",
+            "/traverse",
+            {
+                "action": "epistemic_support",
+                "start_uid": uid,
+                "k": k,
+                "max_hops": max_hops,
+            },
+        )
 
     async def resume_document(
         self,
