@@ -415,6 +415,42 @@ def test_reasoning_chain_shortcut_uses_start_uid():
     client.close()
 
 
+def test_epistemic_support_shortcut_and_retryability():
+    from mindgraph._retry import can_retry_request
+
+    cap = Capture()
+    payload = {
+        "mode": "epistemic_support",
+        "start_uid": "c_1",
+        "k": 2,
+        "max_hops": 4,
+        "has_broken_dependency": True,
+        "survival_status": "partially_invalidated",
+        "score_semantics": "ranking_triage_not_bayesian_posterior",
+        "chains": [
+            {
+                "node_uids": ["c_1", "e_2"],
+                "labels": ["Conclusion", "Evidence 2"],
+                "support_cost": 0.5798,
+                "derived_confidence": 0.56,
+                "hop_count": 1,
+            }
+        ],
+    }
+    client = make_client(cap, response_json=payload)
+    res = client.epistemic_support("c_1", k=2, max_hops=4)
+    assert cap.path == "/traverse"
+    assert cap.body == {
+        "action": "epistemic_support",
+        "start_uid": "c_1",
+        "k": 2,
+        "max_hops": 4,
+    }
+    assert res["survival_status"] == "partially_invalidated"
+    assert can_retry_request("POST", "/traverse", cap.body) is True
+    client.close()
+
+
 def test_retrieve_context_forwards_budgeted_expansion_options():
     cap = Capture()
     client = make_client(cap, response_json={"graph": {"nodes": [], "edges": []}})
