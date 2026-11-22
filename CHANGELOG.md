@@ -1,10 +1,12 @@
 # Changelog
 
-## Unreleased
+## 0.19.0 (2026-11-22)
+
+Adds sync (`MindGraph`) and async (`AsyncMindGraph`) Document Readiness Lifecycle (`document-status.v1`) inspection and bounded wait helpers (`get_document_status`, `wait_for_document`), typed readiness errors, Python 3.9-compatible TypedDict shapes, and `resume_document` `reprocess` support.
 
 ### Added
 
-- **Document Readiness Lifecycle (`document-status.v1`, RL4).** Added sync
+- **Document Readiness Lifecycle (`document-status.v1`, RL4 & RL5).** Added sync
   (`MindGraph`) and async (`AsyncMindGraph`) `get_document_status(document_uid)`
   and `wait_for_document(document_uid, ...)` helpers with attempt pinning,
   `attempt_state`-only active/terminal classification, transparent
@@ -14,8 +16,8 @@
   (`ValidationError`, `ReadinessUnknownError`, `DocumentSupersededError`,
   `ReadinessNotRequestedError`, `DocumentIncompleteError`,
   `DocumentWaitTimeoutError`, `DocumentWaitCancelledError`), TypedDict shapes
-  (`DocumentStatus`, `DocumentStatusReadiness`, `DocumentStatusError`), and
-  optional `reprocess` on `resume_document`.
+  (`DocumentStatus`, `DocumentStatusReadiness`, `DocumentStatusError`),
+  optional `reprocess` on `resume_document`, and README contract examples.
 
 ## 0.18.0
 
