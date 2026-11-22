@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.20.0 (2026-11-22)
+
+Adds **EA7 Use 2** weighted epistemic support chains and alternative-proof survival (`POST /traverse` `action: "epistemic_support"`) on both `MindGraph` and `AsyncMindGraph`, plus read-only retry classification.
+
+### Added
+
+- **Epistemic support chains & survival status (`EA7` Use 2, `#25`).** Added
+  `"epistemic_support"` to read-only `READ_ACTIONS["/traverse"]` (in sync with
+  `mindgraph` TS SDK) and added `epistemic_support(uid, *, k=3, max_hops=6)` on
+  both `MindGraph` and `AsyncMindGraph`, returning `survival_status`
+  (`supported`, `unbacked`, `partially_invalidated`, `unsupported_invalidated`),
+  `has_broken_dependency`, `score_semantics`
+  (`ranking_triage_not_bayesian_posterior`), and ranked multi-hop `chains`.
+
 ## 0.19.0 (2026-11-22)
 
 Adds sync (`MindGraph`) and async (`AsyncMindGraph`) Document Readiness Lifecycle (`document-status.v1`) inspection and bounded wait helpers (`get_document_status`, `wait_for_document`), typed readiness errors, Python 3.9-compatible TypedDict shapes, and `resume_document` `reprocess` support.
