@@ -2,15 +2,41 @@
 
 from __future__ import annotations
 
+import asyncio
 import math
+import threading
 import time
 from copy import deepcopy
-from typing import Any, Literal, TypedDict, overload
+from typing import Any, Dict, List, Literal, Optional, TypedDict, Union, overload
+from urllib.parse import quote
 
 import httpx
 
-from .memory import MemoryClient
+from ._errors import MindGraphError
 from ._retry import TERMINAL_CODES, can_retry_request, retry_delay
+from .document_lifecycle import (
+    DEFAULT_WAIT_INTERVAL_MS,
+    DEFAULT_WAIT_TIMEOUT_MS,
+    DOCUMENT_STATUS_CONTRACT,
+    AttemptState,
+    DimensionState,
+    DocumentIncompleteError,
+    DocumentStatus,
+    DocumentStatusError,
+    DocumentStatusReadiness,
+    DocumentSupersededError,
+    DocumentWaitCancelledError,
+    DocumentWaitTimeoutError,
+    ReadinessDimension,
+    ReadinessNotRequestedError,
+    ReadinessUnknownError,
+    ValidationError,
+    run_wait_for_document_async,
+    run_wait_for_document_sync,
+    validate_document_status_payload,
+    validate_wait_params,
+)
+from .memory import MemoryClient
 
 
 class _RequiredSkillDistillProps(TypedDict):
@@ -23,18 +49,6 @@ class SkillDistillProps(_RequiredSkillDistillProps, total=False):
     """Caller-authored content for a governed skill candidate."""
 
     license: str
-
-
-class MindGraphError(Exception):
-    def __init__(self, message: str, status: int, body: Any = None):
-        super().__init__(message)
-        self.status = status
-        self.body = body
-        fields = body if isinstance(body, dict) else {}
-        self.code: str | None = fields.get("code") if isinstance(fields.get("code"), str) else None
-        self.retriable: bool | None = (
-            fields.get("retriable") if isinstance(fields.get("retriable"), bool) else None
-        )
 
 
 class MindGraph:
@@ -1706,16 +1720,58 @@ class MindGraph:
         self,
         doc_uid: str,
         *,
-        layers: list[str] | None = None,
-        agent_id: str | None = None,
-    ) -> dict[str, Any]:
+        layers: Optional[List[str]] = None,
+        agent_id: Optional[str] = None,
+        reprocess: Optional[bool] = None,
+    ) -> Dict[str, Any]:
         """Resume ingestion of a document that has failed chunks."""
-        body: dict[str, Any] = {}
+        body: Dict[str, Any] = {}
         if layers:
             body["layers"] = layers
         if agent_id:
             body["agent_id"] = agent_id
-        return self._request("POST", f"/ingest/resume/{doc_uid}", body)
+        if reprocess is not None:
+            body["reprocess"] = reprocess
+        return self._request("POST", f"/ingest/resume/{quote(doc_uid, safe='')}", body)
+
+    def get_document_status(self, document_uid: str) -> DocumentStatus:
+        """Read authoritative document readiness status (`document-status.v1`)."""
+        path = f"/ingest/document/{quote(document_uid, safe='')}/status"
+        raw = self._request("GET", path)
+        return validate_document_status_payload(raw, 200)
+
+    def wait_for_document(
+        self,
+        document_uid: str,
+        *,
+        attempt_id: Optional[str] = None,
+        until: ReadinessDimension = "extraction",
+        timeout_ms: int = DEFAULT_WAIT_TIMEOUT_MS,
+        interval_ms: int = DEFAULT_WAIT_INTERVAL_MS,
+        cancel_event: Optional[threading.Event] = None,
+    ) -> DocumentStatus:
+        """Poll `GET /ingest/document/{uid}/status` until `until` reaches `"ready"`.
+
+        Strictly read-only: timeout and cancellation never cancel jobs, delete
+        documents, or resubmit content.
+        """
+        pinned, dim, valid_timeout, clamped_interval = validate_wait_params(
+            attempt_id=attempt_id,
+            until=until,
+            timeout_ms=timeout_ms,
+            interval_ms=interval_ms,
+        )
+        path = f"/ingest/document/{quote(document_uid, safe='')}/status"
+        return run_wait_for_document_sync(
+            document_uid=document_uid,
+            path=path,
+            attempt_id=pinned,
+            until=dim,
+            timeout_ms=valid_timeout,
+            interval_ms=clamped_interval,
+            cancel_event=cancel_event,
+            fetch_once=lambda rem_s: self._client.request("GET", path, timeout=rem_s),
+        )
 
     def delete_document(self, uid: str) -> Any:
         """Delete a document and all its chunks and extracted nodes."""
@@ -2323,3 +2379,164 @@ class MindGraph:
         if mode is not None:
             body["mode"] = mode
         return self._request("POST", "/ontology/extract", body)
+
+
+class AsyncMindGraph:
+    """Async client for MindGraph document readiness & ingestion APIs (`httpx.AsyncClient`)."""
+
+    def __init__(
+        self,
+        base_url: str,
+        *,
+        api_key: Optional[str] = None,
+        jwt: Optional[str] = None,
+        org_id: Optional[str] = None,
+        timeout: float = 30.0,
+        max_retries: int = 3,
+        retry_backoff: float = 1.0,
+    ):
+        self.base_url = base_url.rstrip("/")
+        self._max_retries = max_retries
+        self._retry_backoff = retry_backoff
+        if isinstance(max_retries, bool) or not isinstance(max_retries, int) or max_retries < 0:
+            raise ValueError("max_retries must be a non-negative integer")
+        if not math.isfinite(retry_backoff) or retry_backoff < 0:
+            raise ValueError("retry_backoff must be finite and non-negative")
+        headers: Dict[str, str] = {"Content-Type": "application/json"}
+        if api_key:
+            headers["Authorization"] = f"Bearer {api_key}"
+        elif jwt:
+            headers["Authorization"] = f"Bearer {jwt}"
+        if org_id:
+            headers["X-MindGraph-Org"] = org_id
+        self._client = httpx.AsyncClient(
+            base_url=self.base_url, headers=headers, timeout=timeout
+        )
+
+    async def aclose(self) -> None:
+        await self._client.aclose()
+
+    async def __aenter__(self) -> AsyncMindGraph:
+        return self
+
+    async def __aexit__(self, *args: Any) -> None:
+        await self.aclose()
+
+    async def _request(self, method: str, path: str, json: Any = None) -> Any:
+        json = deepcopy(json)
+        retry_safe = can_retry_request(method, path, json)
+        last_error: Optional[MindGraphError] = None
+        for attempt in range(self._max_retries + 1):
+            resp = await self._client.request(method, path, json=json)
+            if resp.status_code >= 400:
+                try:
+                    body = resp.json()
+                except Exception:
+                    body = resp.text
+                err = MindGraphError(
+                    f"{method} {path} failed: {resp.status_code}",
+                    resp.status_code,
+                    body,
+                )
+                if (
+                    resp.status_code == 503
+                    and retry_safe
+                    and err.retriable is not False
+                    and err.code not in TERMINAL_CODES
+                    and attempt < self._max_retries
+                ):
+                    last_error = err
+                    delay = retry_delay(
+                        resp.headers.get("retry-after"), self._retry_backoff, attempt
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                raise err
+            if not resp.content:
+                return None
+            return resp.json()
+        raise last_error  # type: ignore[misc]
+
+    async def get_job(self, job_id: str) -> Dict[str, Any]:
+        return await self._request("GET", f"/jobs/{quote(job_id, safe='')}")
+
+    async def resume_document(
+        self,
+        doc_uid: str,
+        *,
+        layers: Optional[List[str]] = None,
+        agent_id: Optional[str] = None,
+        reprocess: Optional[bool] = None,
+    ) -> Dict[str, Any]:
+        """Resume ingestion of a document that has failed chunks."""
+        body: Dict[str, Any] = {}
+        if layers:
+            body["layers"] = layers
+        if agent_id:
+            body["agent_id"] = agent_id
+        if reprocess is not None:
+            body["reprocess"] = reprocess
+        return await self._request(
+            "POST", f"/ingest/resume/{quote(doc_uid, safe='')}", body
+        )
+
+    async def get_document_status(self, document_uid: str) -> DocumentStatus:
+        """Read authoritative document readiness status (`document-status.v1`)."""
+        path = f"/ingest/document/{quote(document_uid, safe='')}/status"
+        raw = await self._request("GET", path)
+        return validate_document_status_payload(raw, 200)
+
+    async def wait_for_document(
+        self,
+        document_uid: str,
+        *,
+        attempt_id: Optional[str] = None,
+        until: ReadinessDimension = "extraction",
+        timeout_ms: int = DEFAULT_WAIT_TIMEOUT_MS,
+        interval_ms: int = DEFAULT_WAIT_INTERVAL_MS,
+        cancel_event: Union[asyncio.Event, threading.Event, None] = None,
+    ) -> DocumentStatus:
+        """Async poll of `GET /ingest/document/{uid}/status` until `until` reaches `"ready"`.
+
+        Strictly read-only: timeout and cancellation never cancel jobs, delete
+        documents, or resubmit content.
+        """
+        pinned, dim, valid_timeout, clamped_interval = validate_wait_params(
+            attempt_id=attempt_id,
+            until=until,
+            timeout_ms=timeout_ms,
+            interval_ms=interval_ms,
+        )
+        path = f"/ingest/document/{quote(document_uid, safe='')}/status"
+        return await run_wait_for_document_async(
+            document_uid=document_uid,
+            path=path,
+            attempt_id=pinned,
+            until=dim,
+            timeout_ms=valid_timeout,
+            interval_ms=clamped_interval,
+            cancel_event=cancel_event,
+            fetch_once=lambda rem_s: self._client.request("GET", path, timeout=rem_s),
+        )
+
+
+__all__ = [
+    "AsyncMindGraph",
+    "AttemptState",
+    "DOCUMENT_STATUS_CONTRACT",
+    "DimensionState",
+    "DocumentIncompleteError",
+    "DocumentStatus",
+    "DocumentStatusError",
+    "DocumentStatusReadiness",
+    "DocumentSupersededError",
+    "DocumentWaitCancelledError",
+    "DocumentWaitTimeoutError",
+    "MindGraph",
+    "MindGraphError",
+    "ReadinessDimension",
+    "ReadinessNotRequestedError",
+    "ReadinessUnknownError",
+    "SkillDistillProps",
+    "ValidationError",
+]
