@@ -451,6 +451,94 @@ def test_epistemic_support_shortcut_and_retryability():
     client.close()
 
 
+def test_navigate_sends_moves_and_drops_unset_arguments():
+    from mindgraph._retry import can_retry_request
+
+    cap = Capture()
+    payload = {
+        "move": "follow",
+        "state": "found",
+        "shown": 1,
+        "items": [{"handle": "n:fix", "uid": "fix", "title": "Ship 2.4.1"}],
+        "next": [{"action": "more", "token": "nv1.abc"}],
+        "token": "nv1.abc",
+        "text": "follow from [n:cause]",
+    }
+    client = make_client(cap, response_json=payload)
+    res = client.navigate("follow", handles=["n:cause"], direction="out", depth=2, limit=1)
+    assert cap.method == "POST"
+    assert cap.path == "/navigate"
+    assert cap.body == {
+        "action": "follow",
+        "handles": ["n:cause"],
+        "direction": "out",
+        "depth": 2,
+        "limit": 1,
+    }
+    assert res["token"] == "nv1.abc"
+    assert can_retry_request("POST", "/navigate", cap.body) is True
+
+    client.navigate("open", handles=["c:c2"], range=(8, 12))
+    assert cap.body == {"action": "open", "handles": ["c:c2"], "range": [8, 12]}
+
+    client.navigate("context", text="pool limit", token="ws1.prev", focus=["n:cause"])
+    assert cap.body == {
+        "action": "context",
+        "text": "pool limit",
+        "token": "ws1.prev",
+        "focus": ["n:cause"],
+    }
+    client.close()
+
+
+def test_navigate_unbuilt_move_raises_typed_error():
+    from mindgraph import MindGraphError
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            501, json={"error": "the `check` move is not built yet", "code": "move_not_built"}
+        )
+
+    client = MindGraph(BASE_URL, api_key="mg_test_key")
+    client._client = httpx.Client(base_url=client.base_url, transport=httpx.MockTransport(handler))
+    with pytest.raises(MindGraphError) as info:
+        client.navigate("check", handles=["n:fix"])
+    assert info.value.status == 501
+    assert info.value.code == "move_not_built"
+    client.close()
+
+
+def test_async_navigate_matches_sync_wire_shape():
+    import asyncio
+
+    from mindgraph import AsyncMindGraph
+
+    seen: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        seen.append(request)
+        return httpx.Response(200, json={"move": "search", "state": "nothing_found", "items": []})
+
+    async def run() -> dict[str, Any]:
+        client = AsyncMindGraph(BASE_URL, api_key="mg_test_key")
+        client._client = httpx.AsyncClient(
+            base_url=client.base_url, transport=httpx.MockTransport(handler)
+        )
+        try:
+            return await client.navigate("search", query="rollback", source="text")
+        finally:
+            await client._client.aclose()
+
+    res = asyncio.run(run())
+    assert res["state"] == "nothing_found"
+    assert seen[0].url.path == "/navigate"
+    assert json.loads(seen[0].content) == {
+        "action": "search",
+        "query": "rollback",
+        "source": "text",
+    }
+
+
 def test_retrieve_context_forwards_budgeted_expansion_options():
     cap = Capture()
     client = make_client(cap, response_json={"graph": {"nodes": [], "edges": []}})
