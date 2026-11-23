@@ -51,6 +51,21 @@ class SkillDistillProps(_RequiredSkillDistillProps, total=False):
     license: str
 
 
+NavigateMove = Literal[
+    "search", "open", "around", "follow", "walk", "lookup", "context", "more", "check"
+]
+
+
+def _navigate_body(action: str, fields: Dict[str, Any]) -> Dict[str, Any]:
+    """The ``POST /navigate`` body: the move plus every argument that was given."""
+    body: Dict[str, Any] = {"action": action}
+    for key, value in fields.items():
+        if value is None:
+            continue
+        body[key] = list(value) if key == "range" else value
+    return body
+
+
 class MindGraph:
     """Client for the MindGraph REST API."""
 
@@ -1721,6 +1736,54 @@ class MindGraph:
                 )
         return result
 
+    def navigate(
+        self,
+        action: NavigateMove,
+        *,
+        query: str | None = None,
+        source: str | None = None,
+        node_types: list[str] | None = None,
+        handles: list[str] | None = None,
+        relations: list[str] | None = None,
+        direction: str | None = None,
+        depth: int | None = None,
+        window: int | None = None,
+        rounds: int | None = None,
+        range: tuple[int, int] | list[int] | None = None,
+        name: str | None = None,
+        token: str | None = None,
+        text: str | None = None,
+        focus: list[str] | None = None,
+        pin: list[str] | None = None,
+        drop: list[str] | None = None,
+        valid_at: str | None = None,
+        budget_tokens: int | None = None,
+        limit: int | None = None,
+        project_uid: str | None = None,
+    ) -> dict[str, Any]:
+        """One move of ``POST /navigate``: an agent's read of the graph by handles.
+
+        Listing moves (``search``, ``open``, ``around``, ``follow``, ``walk``,
+        ``lookup``, ``more``, ``check``) return ``{move, state, shown,
+        more_available, stopped, items, next, token, text, ...}``; ``text`` is
+        written for a model to read, and ``next`` lists moves valid from here.
+        ``context`` returns the ``/retrieve/context`` response with a
+        ``working_set`` block; send ``working_set["token"]`` as ``token`` on the
+        session's next ``context`` call. ``more`` takes the ``token`` of the
+        previous result. Handles are ``<letter>:<uid>`` (``n:`` item, ``c:``
+        source text, ``e:`` entity, ``d:`` document). A server without the
+        ``check`` move answers 501 with code ``move_not_built``.
+        """
+        fields = {
+            "query": query, "source": source, "node_types": node_types,
+            "handles": handles, "relations": relations, "direction": direction,
+            "depth": depth, "window": window, "rounds": rounds, "range": range,
+            "name": name, "token": token, "text": text, "focus": focus,
+            "pin": pin, "drop": drop, "valid_at": valid_at,
+            "budget_tokens": budget_tokens, "limit": limit, "project_uid": project_uid,
+        }
+        return self._request("POST", "/navigate", _navigate_body(action, fields))
+
     def backfill_node_sources(self) -> dict[str, Any]:
         """Backfill node_source provenance from existing ExtractedFrom edges."""
         return self._request("POST", "/backfill/node-sources", {})
@@ -2503,6 +2566,42 @@ class AsyncMindGraph:
                 "max_hops": max_hops,
             },
         )
+
+    async def navigate(
+        self,
+        action: NavigateMove,
+        *,
+        query: str | None = None,
+        source: str | None = None,
+        node_types: list[str] | None = None,
+        handles: list[str] | None = None,
+        relations: list[str] | None = None,
+        direction: str | None = None,
+        depth: int | None = None,
+        window: int | None = None,
+        rounds: int | None = None,
+        range: tuple[int, int] | list[int] | None = None,
+        name: str | None = None,
+        token: str | None = None,
+        text: str | None = None,
+        focus: list[str] | None = None,
+        pin: list[str] | None = None,
+        drop: list[str] | None = None,
+        valid_at: str | None = None,
+        budget_tokens: int | None = None,
+        limit: int | None = None,
+        project_uid: str | None = None,
+    ) -> dict[str, Any]:
+        """One move of ``POST /navigate``; see :meth:`MindGraph.navigate`."""
+        fields = {
+            "query": query, "source": source, "node_types": node_types,
+            "handles": handles, "relations": relations, "direction": direction,
+            "depth": depth, "window": window, "rounds": rounds, "range": range,
+            "name": name, "token": token, "text": text, "focus": focus,
+            "pin": pin, "drop": drop, "valid_at": valid_at,
+            "budget_tokens": budget_tokens, "limit": limit, "project_uid": project_uid,
+        }
+        return await self._request("POST", "/navigate", _navigate_body(action, fields))
 
     async def resume_document(
         self,
