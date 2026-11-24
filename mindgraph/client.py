@@ -1771,8 +1771,14 @@ class MindGraph:
         ``working_set`` block; send ``working_set["token"]`` as ``token`` on the
         session's next ``context`` call. ``more`` takes the ``token`` of the
         previous result. Handles are ``<letter>:<uid>`` (``n:`` item, ``c:``
-        source text, ``e:`` entity, ``d:`` document). A server without the
-        ``check`` move answers 501 with code ``move_not_built``.
+        source text, ``e:`` entity, ``d:`` document). A listing item may carry
+        ``linked``: how many items ``follow`` would list one step out. ``check``
+        items carry ``support`` (``verdict``: ``stands``, ``weakened``,
+        ``withdrawn``, ``no_support_recorded`` or ``undetermined``; ``chains``;
+        ``hop_limit_reached``; ``more_chains``) and ``head`` (``state``:
+        ``current``, ``superseded`` with ``heads``, ``cycle`` or
+        ``undetermined``). A server older than a move answers 501 with code
+        ``move_not_built``.
         """
         fields = {
             "query": query, "source": source, "node_types": node_types,

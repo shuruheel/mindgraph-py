@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.21.0 (2026-11-24)
+
+Adds `navigate()` for `POST /navigate` on both `MindGraph` and `AsyncMindGraph`: an agent reads the graph by handles, one move at a time (recursive navigation, batch A4). Needs a server with `/navigate` (mindgraph-rs #266, #271, #273); older servers answer 404.
+
+### Added
+
+- **`navigate(action, **args)` (`#27`).** Keyword arguments for every move
+  argument (`query`, `source`, `node_types`, `handles`, `relations`,
+  `direction`, `depth`, `window`, `rounds`, `range`, `name`, `token`, `text`,
+  `focus`, `pin`, `drop`, `valid_at`, `budget_tokens`, `limit`,
+  `project_uid`); unset ones are not sent. The moves `search`, `open`,
+  `around`, `follow`, `walk`, `lookup`, `more` and `check` return the listing
+  result (`move`, `state`, `items`, `next`, a `token` for `more`, and the
+  rendered `text`); `context` returns the `/retrieve/context` response with
+  its `working_set` block. `check` items carry `support` (verdict and surviving
+  chains) and `head` (where the replacement chain ends); listing items may
+  carry `linked`. Every move is a read, so `/navigate` joins the read POSTs
+  that retry on 503, in step with the TypeScript SDK.
+
 ## 0.20.0 (2026-11-22)
 
 Adds **EA7 Use 2** weighted epistemic support chains and alternative-proof survival (`POST /traverse` `action: "epistemic_support"`) on both `MindGraph` and `AsyncMindGraph`, plus read-only retry classification.
